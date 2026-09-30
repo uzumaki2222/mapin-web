@@ -19,7 +19,8 @@ export const privyConfig = {
   loginMethods: ["wallet", "email"] as ("wallet" | "email")[],
   appearance: {
     theme: "light" as const,
-    logo: `${PUBLIC_APP_URL}/mapin-logo.png`,
+    // Resolved from the page itself so the logo shows even when NEXT_PUBLIC_APP_URL is missing or stale.
+    logo: `${typeof window !== "undefined" ? window.location.origin : PUBLIC_APP_URL}/mapin-logo.png`,
     landingHeader: "Connect to mapin",
     loginMessage: "Tokenize any place on earth",
     showWalletLoginFirst: true,
