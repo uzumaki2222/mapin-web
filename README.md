@@ -69,4 +69,5 @@ self-hosted instance (`NOMINATIM\_URL`, `OVERPASS\_URL`), and set `OSM\_CONTACT\
 * `db/tests/scenario.sql` — SQL scenario for the schema (`psql -f` against a scratch database)
 * `npm run test:contracts` — read-only checks against the live Pons contracts
 * deploy
+* deplo2
 
