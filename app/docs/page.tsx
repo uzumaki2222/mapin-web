@@ -43,8 +43,7 @@ export default function DocsPage() {
             creates its market and can earn creator fees on every trade.
           </p>
           <p>
-            Tokens are created and traded on <strong>BNB Smart Chain</strong> through the <strong>Flap</strong> launch
-            protocol: every token starts on a bonding curve and graduates to PancakeSwap once enough of the supply has
+            Tokens are created and traded on <strong>BNB Smart Chain</strong>: every token starts on a bonding curve and graduates to PancakeSwap once enough of the supply has
             been bought. mapin never holds your funds — you sign every transaction in your own wallet.
           </p>
         </section>
@@ -75,7 +74,7 @@ export default function DocsPage() {
               (New York City → <code>$NYC</code>), a single word stays as it is (<code>$TOKYO</code>). You can change both.
             </li>
             <li>Upload a logo (PNG, JPEG, WebP or GIF, up to 2 MB). A flag, skyline or landmark works well.</li>
-            <li>Choose the pair (BNB or a stablecoin the protocol currently accepts), an optional initial buy and your creator fees.</li>
+            <li>Choose the pair (BNB or a supported stablecoin), an optional initial buy and your creator fees.</li>
             <li>
               Review and launch. mapin simulates the transaction first; if the simulation fails, nothing is sent. Your
               wallet then asks you to confirm.
@@ -124,7 +123,7 @@ export default function DocsPage() {
           <table className="table">
             <thead><tr><th>Fee</th><th>Who sets it</th><th>Where it goes</th></tr></thead>
             <tbody>
-              <tr><td>Protocol trading fee</td><td>The launch protocol (read live, shown before you trade)</td><td>The protocol</td></tr>
+              <tr><td>Trading fee</td><td>The launch contract (read live, shown before you trade)</td><td>The launch contract</td></tr>
               <tr><td>Creator fees</td><td>The creator, at launch (0–10% per side)</td><td>Creator wallet / burn / liquidity</td></tr>
               <tr><td>Network gas</td><td>BNB Smart Chain</td><td>Validators — shown in your wallet</td></tr>
             </tbody>

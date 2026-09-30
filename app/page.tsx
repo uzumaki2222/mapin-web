@@ -11,14 +11,13 @@ export default function LandingPage() {
   return (
     <div className="landing">
       <section className="container landing-hero">
-        <div className="landing-kicker">BNB Smart Chain · Launched on Flap</div>
+        <div className="landing-kicker">Built on BNB Smart Chain</div>
         <h1>Tokenize any place on earth.</h1>
         <p className="landing-lead">
           mapin is a launchpad on a world map. Every country, state, city, town and neighbourhood can have exactly one
           token — and whoever launches it first earns the creator fees.
         </p>
         <div className="row" style={{ gap: 12 }}>
-          <Link href="/app" className="btn btn-primary btn-lg">Launch App</Link>
           <Link href="/docs" className="btn btn-lg">Read the docs</Link>
         </div>
       </section>
@@ -63,7 +62,7 @@ export default function LandingPage() {
 
       <section className="container landing-section landing-cta">
         <h2>Which place will you put on the map?</h2>
-        <Link href="/app" className="btn btn-primary btn-lg">Launch App</Link>
+        <p>Every border on earth is waiting for its token.</p>
       </section>
     </div>
   );
