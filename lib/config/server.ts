@@ -9,7 +9,11 @@ const optionalString = z.preprocess(emptyToUndefined, z.string().optional());
 const optionalUrl = z.preprocess(emptyToUndefined, z.url().optional());
 
 const schema = z.object({
-  NEXT_PUBLIC_APP_URL: z.preprocess(emptyToUndefined, z.url().default("http://localhost:3000")),
+  // Falls back to the Vercel production domain, then localhost.
+  NEXT_PUBLIC_APP_URL: z.preprocess(
+    (v) => emptyToUndefined(v) ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined),
+    z.url().default("http://localhost:3000"),
+  ),
   SESSION_SECRET: optionalString,
   DATABASE_URL: optionalString,
   DATABASE_SSL: z.preprocess(emptyToUndefined, z.enum(["true", "false"]).default("false")),
@@ -72,6 +76,21 @@ export function features(): FeatureFlags {
 
 export function appOrigin(): URL {
   return new URL(serverEnv().NEXT_PUBLIC_APP_URL);
+}
+
+/**
+ * The origin the browser actually used for this request (the site can be reached on several Vercel
+ * aliases). Taken from the Host the request was sent to, which a browser cannot forge cross-site.
+ */
+export function requestOrigin(req: Request): URL {
+  const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(",")[0]!.trim();
+  if (!host) return appOrigin();
+  const proto = (req.headers.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https")).split(",")[0]!.trim();
+  try {
+    return new URL(`${proto}://${host}`);
+  } catch {
+    return appOrigin();
+  }
 }
 
 export function requireDatabaseUrl(): string {

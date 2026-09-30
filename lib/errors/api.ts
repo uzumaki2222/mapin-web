@@ -80,5 +80,13 @@ export async function readJson(req: Request): Promise<unknown> {
 /** Reject cross-site state-changing requests (defence in depth on top of SameSite cookies). */
 export function assertSameOrigin(req: Request, appOrigin: URL): void {
   const origin = req.headers.get("origin");
-  if (origin && origin !== appOrigin.origin) throw forbidden("Cross-origin request rejected");
+  if (!origin || origin === appOrigin.origin) return;
+  // Same site reached through another domain alias (e.g. a second *.vercel.app name): Origin equals the Host.
+  const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(",")[0]!.trim();
+  try {
+    if (host && new URL(origin).host === host) return;
+  } catch {
+    /* malformed Origin */
+  }
+  throw forbidden("Cross-origin request rejected");
 }

@@ -4,7 +4,7 @@ import { parseSiweMessage } from "viem/siwe";
 import { getSession, updateSession } from "@/lib/auth/session";
 import { queryOne } from "@/lib/database/pool";
 import { handle, readJson, unauthorized, badRequest, assertSameOrigin } from "@/lib/errors/api";
-import { appOrigin } from "@/lib/config/server";
+import { requestOrigin } from "@/lib/config/server";
 import { serverPublicClient } from "@/lib/chain/server-client";
 import { upsertUserByWallet } from "@/lib/database/queries";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
@@ -22,7 +22,7 @@ const MAX_VALIDITY_MS = 15 * 60 * 1000;
 
 export async function POST(req: Request) {
   return handle("auth/verify", async () => {
-    const origin = appOrigin();
+    const origin = requestOrigin(req);
     assertSameOrigin(req, origin);
     await rateLimit(`verify:${clientIp(req)}`, 20, 60);
     const { message, signature } = body.parse(await readJson(req));
