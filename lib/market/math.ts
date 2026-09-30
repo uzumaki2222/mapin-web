@@ -38,7 +38,7 @@ export function bpsOf(amount: bigint, bps: bigint | number): bigint {
 /**
  * Price impact in basis points, comparing the execution price of a trade with the spot price.
  * All inputs are raw integers:
- *   spotPriceWad  quote per 1 token, 1e18 scaled (curve reserves or the v4 pool price)
+ *   spotPriceWad  quote per 1 token, 1e18 scaled (as returned by the Portal lens)
  *   side "buy":   amountIn = quote spent, amountOut = tokens received
  *   side "sell":  amountIn = tokens sold, amountOut = quote received
  * Quote and token amounts are normalised to 18 decimals first.
@@ -71,7 +71,7 @@ export function marketCapWad(priceWad: bigint, totalSupply: bigint, tokenDecimal
   return (priceWad * totalSupply) / 10n ** BigInt(tokenDecimals);
 }
 
-/** Uniswap-v2 style constant product output for an exact input with the pool fee in bps. */
+/** Uniswap-v2 constant product output for an exact input with the pool fee in bps (Pancake v2: 25). */
 export function getAmountOutV2(amountIn: bigint, reserveIn: bigint, reserveOut: bigint, feeBps = 25n): bigint {
   if (amountIn <= 0n || reserveIn <= 0n || reserveOut <= 0n) return 0n;
   const inWithFee = amountIn * (BPS_DENOMINATOR - feeBps);

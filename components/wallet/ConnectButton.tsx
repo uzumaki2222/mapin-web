@@ -6,8 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useWalletUi } from "@/components/wallet/WalletUi";
 import { useIsSignedIn, useSession, useWalletSignIn } from "@/hooks/useSession";
 import { shortenAddress, formatAmount } from "@/lib/validation/normalize";
-import { CHAIN_ID, CHAIN_NAME } from "@/lib/contracts/constants";
-import { EXPLORER_NAME, explorerAddress } from "@/lib/config/public";
+import { BSC_CHAIN_ID } from "@/lib/contracts/constants";
+import { explorerAddress } from "@/lib/config/public";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { api } from "@/lib/client/api";
 
@@ -17,8 +17,8 @@ export function ConnectButton({ block = false }: { block?: boolean }) {
   const menuRef = useRef<HTMLDivElement>(null);
   const walletUi = useWalletUi();
   const qc = useQueryClient();
-  const onChain = chainId === CHAIN_ID;
-  const balance = useBalance({ address, chainId: CHAIN_ID, query: { enabled: Boolean(address), refetchInterval: 15_000 } });
+  const onBsc = chainId === BSC_CHAIN_ID;
+  const balance = useBalance({ address, chainId: BSC_CHAIN_ID, query: { enabled: Boolean(address), refetchInterval: 15_000 } });
   const session = useSession();
   const signedIn = useIsSignedIn();
   const { signIn, pending: signing, error: signError } = useWalletSignIn();
@@ -49,14 +49,14 @@ export function ConnectButton({ block = false }: { block?: boolean }) {
     );
   }
 
-  const eth = balance.data ? formatAmount(balance.data.value, balance.data.decimals, 4) : null;
+  const bnb = balance.data ? formatAmount(balance.data.value, balance.data.decimals, 4) : null;
 
   return (
     <div style={{ position: "relative" }} ref={menuRef}>
       <button type="button" className="account-chip" onClick={() => setMenu((m) => !m)} aria-expanded={menu} data-testid="account-chip">
-        <span className="dot" style={{ color: onChain ? "var(--green)" : "var(--red)" }} aria-hidden />
+        <span className="dot" style={{ color: onBsc ? "var(--green)" : "var(--red)" }} aria-hidden />
         <span>{shortenAddress(address)}</span>
-        <span className="muted">{onChain ? (eth !== null ? `${eth} ETH` : "… ETH") : "Wrong network"}</span>
+        <span className="muted">{onBsc ? (bnb !== null ? `${bnb} BNB` : "… BNB") : "Wrong network"}</span>
       </button>
       {menu ? (
         <div className="account-menu" role="menu">
@@ -68,9 +68,9 @@ export function ConnectButton({ block = false }: { block?: boolean }) {
             <dt>Wallet</dt>
             <dd>{connector?.name ?? "—"}</dd>
             <dt>Network</dt>
-            <dd className={onChain ? "pos" : "neg"}>{onChain ? `${CHAIN_NAME} ✓` : `Chain ${chainId ?? "?"}`}</dd>
+            <dd className={onBsc ? "pos" : "neg"}>{onBsc ? "BNB Chain ✓" : `Chain ${chainId ?? "?"}`}</dd>
             <dt>Balance</dt>
-            <dd>{balance.isError ? "RPC unavailable" : eth !== null ? `${eth} ETH` : "…"}</dd>
+            <dd>{balance.isError ? "RPC unavailable" : bnb !== null ? `${bnb} BNB` : "…"}</dd>
             <dt>Session</dt>
             <dd>{signedIn ? "Signed in" : "Not signed in"}</dd>
           </dl>
@@ -80,7 +80,7 @@ export function ConnectButton({ block = false }: { block?: boolean }) {
             </button>
           ) : null}
           {signError ? <span className="error-text">{signError}</span> : null}
-          <a className="btn btn-sm" href={explorerAddress(address)} target="_blank" rel="noopener noreferrer">View on {EXPLORER_NAME} ↗</a>
+          <a className="btn btn-sm" href={explorerAddress(address)} target="_blank" rel="noopener noreferrer">View on BscScan ↗</a>
           <button
             type="button"
             className="btn btn-sm btn-danger"

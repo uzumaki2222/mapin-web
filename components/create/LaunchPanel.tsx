@@ -7,12 +7,12 @@ import { LAUNCH_STEPS, readPendingLaunch, clearPendingLaunch, useLaunch, type La
 import { Notice } from "@/components/ui/Notice";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Logo } from "@/components/ui/Logo";
-import { EXPLORER_NAME, explorerAddress, explorerTx } from "@/lib/config/public";
-import { CHAIN_ID, CHAIN_NAME } from "@/lib/contracts/constants";
+import { explorerAddress, explorerTx } from "@/lib/config/public";
+import { BSC_CHAIN_ID } from "@/lib/contracts/constants";
 
 export function LaunchPanel({ input, onBack }: { input: LaunchInput; onBack: () => void }) {
   const { chainId } = useConnection();
-  const { launch, resume, reset, step, error, detail, result, txHash } = useLaunch();
+  const { launch, resume, cancel, reset, step, error, detail, result, txHash } = useLaunch();
   // Only rendered client-side after user interaction (step 5), so reading storage here is safe.
   const [pending, setPending] = useState<PendingLaunch | null>(() => (typeof window === "undefined" ? null : readPendingLaunch()));
 
@@ -23,7 +23,7 @@ export function LaunchPanel({ input, onBack }: { input: LaunchInput; onBack: () 
     return (
       <div className="live-banner stack" data-testid="market-live">
         <Logo height={36} />
-        <h2 style={{ margin: 0 }}>{input.businessName.toUpperCase()} IS ON THE MAP</h2>
+        <h2 style={{ margin: 0 }}>{input.placeName.toUpperCase()} IS ON THE MAP</h2>
         <div>
           <div className="tiny">Token</div>
           <div className="row"><span className="break">{result.tokenAddress}</span><CopyButton value={result.tokenAddress} /></div>
@@ -34,13 +34,9 @@ export function LaunchPanel({ input, onBack }: { input: LaunchInput; onBack: () 
             <a className="break" href={explorerTx(result.txHash)} target="_blank" rel="noopener noreferrer" style={{ color: "var(--yellow)" }}>{result.txHash}</a>
           </div>
         </div>
-        {result.buyWarning ? <Notice tone="warn">{result.buyWarning}</Notice> : null}
-        {result.buyTxHash && !result.buyWarning ? (
-          <div className="tiny">Initial buy: <a className="break" href={explorerTx(result.buyTxHash)} target="_blank" rel="noopener noreferrer" style={{ color: "var(--yellow)" }}>{result.buyTxHash}</a></div>
-        ) : null}
         <div className="row">
           <Link className="btn btn-yellow" href={result.marketPath}>Open market page →</Link>
-          <a className="btn" href={explorerAddress(result.tokenAddress)} target="_blank" rel="noopener noreferrer">{EXPLORER_NAME} ↗</a>
+          <a className="btn" href={explorerAddress(result.tokenAddress)} target="_blank" rel="noopener noreferrer">BscScan ↗</a>
         </div>
       </div>
     );
@@ -48,10 +44,10 @@ export function LaunchPanel({ input, onBack }: { input: LaunchInput; onBack: () 
 
   return (
     <div className="card stack">
-      <div className="panel-title">Step 4 — Tokenize</div>
+      <div className="panel-title">Step 4 — Launch</div>
       {pending && !busy ? (
         <Notice tone="warn" title="Unfinished launch found">
-          A launch for {pending.businessName} was sent ({pending.txHash.slice(0, 10)}…) but not confirmed here.
+          A launch for {pending.placeName} was sent ({pending.txHash.slice(0, 10)}…) but not confirmed here.
           <div className="row" style={{ marginTop: 8 }}>
             <button type="button" className="btn btn-sm btn-primary" onClick={() => resume(pending)}>Resume confirmation</button>
             <a className="btn btn-sm" href={explorerTx(pending.txHash)} target="_blank" rel="noopener noreferrer">View tx ↗</a>
@@ -80,20 +76,21 @@ export function LaunchPanel({ input, onBack }: { input: LaunchInput; onBack: () 
       ) : null}
 
       {error ? <Notice tone="error" title="Launch did not complete">{error.message}</Notice> : null}
-      {chainId !== CHAIN_ID ? <Notice tone="warn">Switch your wallet to {CHAIN_NAME} to launch.</Notice> : null}
+      {chainId !== BSC_CHAIN_ID ? <Notice tone="warn">Switch your wallet to BNB Smart Chain to launch.</Notice> : null}
 
       <div className="row between">
         <button type="button" className="btn" disabled={busy} onClick={() => { reset(); onBack(); }}>← Back</button>
         <div className="row">
+          {step === "salt" && !error ? <button type="button" className="btn btn-ghost" onClick={cancel}>Cancel</button> : null}
           <button
             type="button"
             className="btn btn-primary btn-lg"
-            disabled={busy || chainId !== CHAIN_ID}
+            disabled={busy || chainId !== BSC_CHAIN_ID}
             onClick={() => launch(input)}
             data-testid="launch-market"
           >
             {busy ? <span className="spinner" aria-hidden /> : null}
-            {error ? "Retry" : `Tokenize ${input.businessName}`}
+            {error ? "Retry launch" : `Launch $${input.symbol}`}
           </button>
         </div>
       </div>

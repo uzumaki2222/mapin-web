@@ -7,7 +7,7 @@ import { createSiweMessage } from "viem/siwe";
 import { api } from "@/lib/client/api";
 import { decodeError } from "@/lib/errors/decode";
 import type { SessionInfo } from "@/lib/market/types";
-import { CHAIN_ID } from "@/lib/contracts/constants";
+import { BSC_CHAIN_ID } from "@/lib/contracts/constants";
 
 export function useSession() {
   return useQuery({ queryKey: ["session"], queryFn: () => api<SessionInfo>("/api/auth/session"), staleTime: 30_000 });
@@ -20,7 +20,7 @@ export function useIsSignedIn(): boolean {
   return Boolean(address && data?.wallet && data.wallet.toLowerCase() === address.toLowerCase());
 }
 
-/** Sign-In with Ethereum (EIP-4361) bound to this domain and Robinhood Chain. No gas, no transaction. */
+/** Sign-In with Ethereum (EIP-4361) bound to this domain and BNB Smart Chain. No gas, no transaction. */
 export function useWalletSignIn() {
   const { address } = useConnection();
   const { mutateAsync: signMessage } = useSignMessage();
@@ -43,7 +43,7 @@ export function useWalletSignIn() {
       const now = new Date();
       const message = createSiweMessage({
         address,
-        chainId: CHAIN_ID,
+        chainId: BSC_CHAIN_ID,
         domain: n.domain,
         nonce: n.nonce,
         uri: n.uri,

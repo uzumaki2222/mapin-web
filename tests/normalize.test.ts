@@ -21,20 +21,20 @@ test("address normalization lower-cases and validates", () => {
   assert.equal(normalizeTxHash("0x" + "AB".repeat(32)), "0x" + "ab".repeat(32));
 });
 
-test("business slugs, tickers and website domains", () => {
+test("place slugs, tickers and website domains", () => {
   assert.equal(slugify("Café Ñandú & Co."), "cafe-nandu-and-co");
-  assert.equal(slugify("  ---  "), "business");
-  assert.equal(slugify("東京ラーメン"), "business");
-  assert.ok(isValidSlug("warung-sari-rasa-a1b2c3"));
-  assert.ok(!isValidSlug("Warung"));
+  assert.equal(slugify("  ---  "), "place");
+  assert.equal(slugify("東京"), "place");
+  assert.ok(isValidSlug("new-york-city-a1b2c3"));
+  assert.ok(!isValidSlug("NewYork"));
   assert.ok(!isValidSlug("a--b"));
-  assert.equal(marketPath("warung-sari-rasa-a1b2c3"), "/b/warung-sari-rasa-a1b2c3");
-  assert.equal(suggestTicker("Warung Sari Rasa"), "WSR");
-  assert.equal(suggestTicker("Starbucks"), "STARBUCK");
-  assert.equal(suggestTicker("Bà Ba Café"), "BBC");
-  assert.equal(suggestTicker("KFC"), "KFC");
-  assert.equal(suggestTicker("Ko"), "KOX");
-  assert.equal(suggestTicker("東京"), "SHOP");
+  assert.equal(marketPath("new-york-city-a1b2c3"), "/p/new-york-city-a1b2c3");
+  assert.equal(suggestTicker("New York City"), "NYC");
+  assert.equal(suggestTicker("United States"), "US");
+  assert.equal(suggestTicker("Indonesia"), "INDONESIA");
+  assert.equal(suggestTicker("São Paulo"), "SP");
+  assert.equal(suggestTicker("Brooklyn"), "BROOKLYN");
+  assert.equal(suggestTicker("東京"), "PLACE");
   assert.equal(websiteDomain("https://www.Example.co.id/menu"), "example.co.id");
   assert.equal(websiteDomain("example.com"), "example.com");
   assert.equal(websiteDomain("javascript:alert(1)"), null);

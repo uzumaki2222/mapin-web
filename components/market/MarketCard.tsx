@@ -13,11 +13,11 @@ export function MarketCard({ m }: { m: MarketSummary }) {
         <TokenLogo src={m.imageUrl} symbol={m.symbol} />
         <div className="grow" style={{ minWidth: 0 }}>
           <div className="row between" style={{ flexWrap: "nowrap" }}>
-            <strong className="mono" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.businessName}</strong>
+            <strong className="mono" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.placeName}</strong>
             <span className="badge badge-black">${m.symbol}</span>
           </div>
           <div className="small muted mono" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {[m.category, m.city, m.country].filter(Boolean).join(" · ")}{m.claimed ? " · ✓ claimed" : ""}
+            {[m.placeType, m.region].filter(Boolean).join(" · ")}
           </div>
         </div>
       </div>

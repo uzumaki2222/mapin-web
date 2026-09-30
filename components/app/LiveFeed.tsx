@@ -66,8 +66,8 @@ export function LiveFeed() {
                   <span className={`live-type ${t.type === "sell" ? "neg" : "pos"}`}>{t.type === "launch" ? "NEW" : t.type === "buy" ? "BUY" : "SELL"}</span>
                   {t.type === "launch" ? (
                     <span className="live-main">
-                      <strong>{t.businessName}</strong>
-                      <span className="muted"> tokenized as ${t.symbol}{t.city ? ` · ${t.city}` : ""}</span>
+                      <strong>{t.placeName}</strong>
+                      <span className="muted"> launched as ${t.symbol}{t.region ? ` · ${t.region}` : ""}</span>
                     </span>
                   ) : (
                     <span className="live-main">

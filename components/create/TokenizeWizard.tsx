@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useConnection } from "wagmi";
-import type { Business } from "@/lib/market/types";
+import type { Place } from "@/lib/market/types";
 import type { QuoteAsset } from "@/lib/market/onchain";
 import { useIsSignedIn, useSession, useWalletSignIn } from "@/hooks/useSession";
 import { useQuoteAssets } from "@/hooks/useQuoteAssets";
@@ -13,21 +13,44 @@ import { Spinner } from "@/components/ui/Spinner";
 import { TokenLogo } from "@/components/ui/TokenLogo";
 import { LaunchPanel } from "@/components/create/LaunchPanel";
 import { CHAIN_ID, CHAIN_NAME } from "@/lib/contracts/constants";
-import { OWNER_ESCROW_ADDRESS, OWNER_FEE_BPS } from "@/lib/config/public";
 import { checkImageMeta } from "@/lib/metadata/validate";
+import { DAY, MAX_TAX_BPS, type TaxConfig } from "@/lib/launch/params";
 import {
-  ValidationError, normalizeSymbol, normalizeTokenName, parseAmount, formatAmount, formatCompact, shortenAddress, suggestTicker, marketPath,
+  ValidationError, normalizeSymbol, normalizeTokenName, parseAmount, formatAmount, shortenAddress, suggestTicker, marketPath,
 } from "@/lib/validation/normalize";
 import { bpsOf } from "@/lib/market/math";
 
-const STEP_LABELS = ["Token", "Market", "Review", "Tokenize"];
+const STEP_LABELS = ["Token", "Market", "Review", "Launch"];
 
-function defaultDescription(b: Business): string {
-  const where = [b.address, b.city, b.country].filter(Boolean).join(", ");
-  return `${b.name}${b.category ? ` — ${b.category.toLowerCase()}` : ""}${where ? ` in ${where}` : ""}. Community token on mapin. Not affiliated with the business unless marked as claimed.`.slice(0, 1000);
+const FEE_DURATIONS = [
+  { days: 30, label: "30 days" },
+  { days: 90, label: "90 days" },
+  { days: 180, label: "180 days" },
+  { days: 365, label: "1 year" },
+  { days: 730, label: "2 years" },
+  { days: 1825, label: "5 years" },
+  { days: 36500, label: "Permanent (100 years)" },
+];
+const ANTI_FARMER = [
+  { hours: 1, label: "1 hour" },
+  { hours: 6, label: "6 hours" },
+  { hours: 24, label: "24 hours" },
+  { hours: 72, label: "3 days" },
+  { hours: 168, label: "7 days" },
+];
+
+function pctToBps(v: string): number | null {
+  if (!/^\d+(\.\d{1,2})?$/.test(v.trim())) return null;
+  const [w, f = ""] = v.trim().split(".");
+  return Number(w) * 100 + Number(f.padEnd(2, "0"));
 }
 
-export function TokenizeWizard({ business }: { business: Business }) {
+function defaultDescription(p: Place): string {
+  const kind = p.placeType ? p.placeType.toLowerCase() : "place";
+  return `The community token of ${p.name}${p.region ? `, ${p.region}` : ""} — a ${kind} on the mapin world map.`.slice(0, 1000);
+}
+
+export function TokenizeWizard({ place }: { place: Place }) {
   const { address, isConnected, chainId } = useConnection();
   const session = useSession();
   const signedIn = useIsSignedIn();
@@ -35,15 +58,25 @@ export function TokenizeWizard({ business }: { business: Business }) {
   const quotes = useQuoteAssets();
 
   const [step, setStep] = useState(0);
-  // Pre-filled from the map; the launcher can change them before launching.
-  const [tokenName, setTokenName] = useState(business.name.slice(0, 32).trim());
-  const [symbol, setSymbol] = useState(suggestTicker(business.name));
-  const [description, setDescription] = useState(defaultDescription(business));
+  // Filled in from the map; the creator can change them before launching.
+  const [tokenName, setTokenName] = useState(place.name.slice(0, 32).trim());
+  const [symbol, setSymbol] = useState(suggestTicker(place.name));
+  const [description, setDescription] = useState(defaultDescription(place));
   const [logo, setLogo] = useState<File | null>(null);
   const [twitter, setTwitter] = useState("");
   const [telegram, setTelegram] = useState("");
+
   const [quoteAddr, setQuoteAddr] = useState<string>("");
   const [initialBuy, setInitialBuy] = useState("0");
+  const [feeOn, setFeeOn] = useState(true);
+  const [buyFee, setBuyFee] = useState("1");
+  const [sellFee, setSellFee] = useState("1");
+  const [feeDays, setFeeDays] = useState(36500);
+  const [antiHours, setAntiHours] = useState(1);
+  const [advanced, setAdvanced] = useState(false);
+  const [splitCreator, setSplitCreator] = useState("100");
+  const [splitBurn, setSplitBurn] = useState("0");
+  const [splitLp, setSplitLp] = useState("0");
 
   const logoUrl = useMemo(() => (logo ? URL.createObjectURL(logo) : null), [logo]);
   useEffect(() => () => {
@@ -52,7 +85,7 @@ export function TokenizeWizard({ business }: { business: Business }) {
 
   const cfg = session.data?.configured;
   const onChain = chainId === CHAIN_ID;
-  const gateOk = Boolean(isConnected && onChain && signedIn && cfg?.metadata && cfg?.escrow);
+  const gateOk = Boolean(isConnected && onChain && signedIn && cfg?.metadata);
 
   const quote: QuoteAsset | undefined = useMemo(() => {
     const list = quotes.data?.assets ?? [];
@@ -63,24 +96,20 @@ export function TokenizeWizard({ business }: { business: Business }) {
     const e: string[] = [];
     try { normalizeTokenName(tokenName); } catch (err) { e.push((err as Error).message); }
     try { normalizeSymbol(symbol); } catch (err) { e.push((err as Error).message); }
-    if (new TextEncoder().encode(twitter).length > 256 || new TextEncoder().encode(telegram).length > 256) e.push("Social links must be 256 bytes or fewer");
     if (!description.trim()) e.push("Description is required");
     if (description.length > 1000) e.push("Description must be 1000 characters or fewer");
-    if (!logo) e.push("A logo image is required (a photo of the storefront works)");
+    if (!logo) e.push("A logo image is required");
     else {
       const m = checkImageMeta(logo.type, logo.size);
       if (m) e.push(m);
     }
     return e;
-  }, [tokenName, symbol, description, logo, twitter, telegram]);
-
-  const launchTerms = quotes.data?.launch ?? null;
-  const protocolMax = launchTerms ? Number(launchTerms.maxCreatorTaxBps) : null;
+  }, [tokenName, symbol, description, logo]);
 
   const market = useMemo(() => {
     const errors: string[] = [];
     let initial = 0n;
-    if (!quote) errors.push(`Launch terms could not be loaded from ${CHAIN_NAME}`);
+    if (!quote) errors.push(`Pair assets could not be loaded from ${CHAIN_NAME}`);
     else {
       try {
         initial = parseAmount(initialBuy || "0", quote.decimals);
@@ -88,17 +117,33 @@ export function TokenizeWizard({ business }: { business: Business }) {
         errors.push(err instanceof ValidationError ? `Initial buy: ${err.message}` : "Invalid initial buy");
       }
     }
-    if (launchTerms && !launchTerms.enabled) errors.push("Launching is currently paused by the launch protocol");
-    if (protocolMax !== null && OWNER_FEE_BPS > protocolMax) errors.push(`The owner share (${OWNER_FEE_BPS / 100}%) is above the protocol cap (${protocolMax / 100}%)`);
-    return { errors, initial };
-  }, [quote, initialBuy, launchTerms, protocolMax]);
+    let tax: TaxConfig | null = null;
+    if (feeOn) {
+      const b = pctToBps(buyFee);
+      const s = pctToBps(sellFee);
+      const sc = pctToBps(splitCreator);
+      const sb = pctToBps(splitBurn);
+      const sl = pctToBps(splitLp);
+      if (b === null || s === null) errors.push("Creator fees must be percentages with up to 2 decimals");
+      else if (b > MAX_TAX_BPS || s > MAX_TAX_BPS) errors.push(`Creator fees are capped at ${MAX_TAX_BPS / 100}%`);
+      else if (b === 0 && s === 0) errors.push("Set a buy or sell fee above 0%, or turn creator fees off");
+      if (sc === null || sb === null || sl === null) errors.push("Fee split must be percentages");
+      else if (sc + sb + sl !== 10_000) errors.push("Fee split must add up to 100%");
+      if (!errors.length) {
+        tax = {
+          buyBps: b!, sellBps: s!, durationSeconds: BigInt(feeDays) * DAY, antiFarmerSeconds: BigInt(antiHours) * 3600n,
+          marketBps: sc!, deflationBps: sb!, lpBps: sl!,
+        };
+      }
+    }
+    return { errors, initial, tax };
+  }, [quote, initialBuy, feeOn, buyFee, sellFee, splitCreator, splitBurn, splitLp, feeDays, antiHours]);
 
-  if (business.market) {
+  if (place.market) {
     return (
       <div className="container section">
         <Notice tone="info" title="Already on the map">
-          {business.name} is already tokenized as ${business.market.symbol}.{" "}
-          <Link href={marketPath(business.slug)}>Open its market →</Link>
+          {place.name} is already tokenized as ${place.market.symbol}. <Link href={marketPath(place.slug)}>Open its market →</Link>
         </Notice>
       </div>
     );
@@ -107,9 +152,8 @@ export function TokenizeWizard({ business }: { business: Business }) {
   const gate = (
     <div className="card stack">
       <div className="panel-title">Before you start</div>
-      {cfg && !cfg.sessions ? <Notice tone="warn" title="Sign-in not configured">The server needs DATABASE_URL and SESSION_SECRET. See the README.</Notice> : null}
+      {cfg && !cfg.sessions ? <Notice tone="warn" title="Sign-in not configured">The server needs DATABASE_URL and SESSION_SECRET. See the docs.</Notice> : null}
       {cfg && !cfg.metadata ? <Notice tone="warn" title="Logo upload not configured">Set METADATA_UPLOAD_URL on the server.</Notice> : null}
-      {cfg && !cfg.escrow ? <Notice tone="warn" title="Owner escrow not configured">Set NEXT_PUBLIC_OWNER_ESCROW_ADDRESS on the server. See README → Owner escrow.</Notice> : null}
       <ol className="progress-list">
         <li data-state={isConnected ? "done" : "active"}>
           {isConnected ? "✓" : "1."} Connect wallet {isConnected && address ? <span className="muted">({shortenAddress(address)})</span> : null}
@@ -131,25 +175,15 @@ export function TokenizeWizard({ business }: { business: Business }) {
   const next = () => setStep((s) => Math.min(3, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
   const fee = quotes.data?.fee;
-  const initialFee = fee && quote ? bpsOf(market.initial, BigInt(fee.buyBps) + BigInt(OWNER_FEE_BPS)) : null;
-  const launchFeeWei = launchTerms ? BigInt(launchTerms.launchFee) : null;
-  const gradThreshold =
-    quote && !quote.isNative
-      ? quote.graduationThreshold ? BigInt(quote.graduationThreshold) : null
-      : launchTerms ? BigInt(launchTerms.graduationThreshold) : null;
-  const where = [business.address, business.city, business.country].filter(Boolean).join(", ");
+  const initialFee = fee && quote ? bpsOf(market.initial, BigInt(fee.buyBps)) : null;
 
   return (
     <div className="container section">
       <div className="place-head">
         <div className="place-pin" aria-hidden>📍</div>
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ margin: 0, fontSize: "1.9rem" }}>Tokenize {business.name}</h1>
-          <div className="small muted">{[business.category, where].filter(Boolean).join(" · ")}</div>
-          <div className="row" style={{ gap: 6, marginTop: 6 }}>
-            <span className="badge">{business.claimed ? "✓ Claimed by owner" : "Unofficial · not affiliated"}</span>
-            <span className="badge">{business.source === "osm" ? "OpenStreetMap place" : "Added by the community"}</span>
-          </div>
+          <h1 style={{ margin: 0, fontSize: "1.9rem" }}>Tokenize {place.name}</h1>
+          <div className="small muted">{[place.placeType, place.region].filter(Boolean).join(" · ")}</div>
         </div>
       </div>
 
@@ -167,7 +201,7 @@ export function TokenizeWizard({ business }: { business: Business }) {
             <div className="card stack">
               <div className="panel-title">Step 1 — Token</div>
               <p className="small muted" style={{ margin: 0 }}>
-                Name and ticker are filled in from the map. Change them if you like — the token stays tied to this place either way.
+                The name and ticker come from the map. Change them if you like — the token stays tied to {place.name} either way.
               </p>
               <div className="grid grid-2">
                 <div className="field">
@@ -194,7 +228,7 @@ export function TokenizeWizard({ business }: { business: Business }) {
                   <TokenLogo src={logoUrl} symbol={symbol || "?"} large />
                   <div className="stack" style={{ gap: 4 }}>
                     <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => setLogo(e.target.files?.[0] ?? null)} aria-label="Logo image" />
-                    <span className="hint">PNG, JPEG, WebP or GIF · max 2 MB · square works best</span>
+                    <span className="hint">PNG, JPEG, WebP or GIF · max 2 MB · square works best (a flag, skyline or landmark)</span>
                   </div>
                 </div>
               </div>
@@ -210,7 +244,7 @@ export function TokenizeWizard({ business }: { business: Business }) {
               </div>
               {tokenErrors.length ? <Notice tone="warn">{tokenErrors.join(" · ")}</Notice> : null}
               <div className="row between">
-                <Link className="btn" href={`/?place=${business.id}`}>← Map</Link>
+                <Link className="btn" href={`/app?place=${place.id}`}>← Map</Link>
                 <button type="button" className="btn btn-primary" disabled={tokenErrors.length > 0} onClick={next}>Continue →</button>
               </div>
             </div>
@@ -219,47 +253,76 @@ export function TokenizeWizard({ business }: { business: Business }) {
           {step === 1 ? (
             <div className="card stack">
               <div className="panel-title">Step 2 — Market</div>
-              <div className="field">
-                <span className="label">Pair</span>
-                {quotes.isLoading ? <Spinner label={`Reading launch terms from ${CHAIN_NAME}…`} /> : null}
-                {quotes.isError ? <Notice tone="error">{(quotes.error as Error).message}</Notice> : null}
-                {quotes.data ? (
-                  <div className="pair-grid" role="radiogroup" aria-label="Pair">
-                    {quotes.data.assets.map((a) => (
-                      <button
-                        key={a.address}
-                        type="button"
-                        role="radio"
-                        aria-checked={quote?.address === a.address}
-                        className="pair-btn"
-                        onClick={() => setQuoteAddr(a.address)}
-                        title={a.name ?? a.symbol}
-                      >
-                        {a.symbol}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                <span className="hint">
-                  {quote && !quote.isNative
-                    ? `Buyers pay in ${quote.symbol}; liquidity graduates into a ${symbol || "token"}/${quote.symbol} pool. The launch fee is paid in ETH.`
-                    : "ETH, or any Robinhood stock token / stablecoin the launch contract accepts right now."}
-                </span>
-              </div>
-              <div className="field">
-                <label className="label" htmlFor="ib">Initial buy (optional)</label>
-                <div className="input-group">
-                  <input id="ib" className="input" inputMode="decimal" value={initialBuy} onChange={(e) => setInitialBuy(e.target.value)} />
-                  <span className="addon">{quote?.symbol ?? "—"}</span>
+              <div className="grid grid-2">
+                <div className="field">
+                  <span className="label">Pair</span>
+                  {quotes.isLoading ? <Spinner label={`Reading supported pairs from ${CHAIN_NAME}…`} /> : null}
+                  {quotes.isError ? <Notice tone="error">{(quotes.error as Error).message}</Notice> : null}
+                  {quotes.data ? (
+                    <div className="pair-grid" role="radiogroup" aria-label="Pair">
+                      {quotes.data.assets.map((a) => (
+                        <button key={a.address} type="button" role="radio" aria-checked={quote?.address === a.address} className="pair-btn" onClick={() => setQuoteAddr(a.address)}>
+                          {a.symbol}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <span className="hint">Only pair assets currently enabled on-chain are listed.</span>
                 </div>
-                <span className="hint">{quote && !quote.isNative ? "Bought right after the launch (approve + buy, two extra wallet confirmations)." : "Buy in the same transaction as the launch. 0 = launch only."}</span>
+                <div className="field">
+                  <label className="label" htmlFor="ib">Initial buy (optional)</label>
+                  <div className="input-group">
+                    <input id="ib" className="input" inputMode="decimal" value={initialBuy} onChange={(e) => setInitialBuy(e.target.value)} />
+                    <span className="addon">{quote?.symbol ?? "—"}</span>
+                  </div>
+                  <span className="hint">Buy your own token in the launch transaction. 0 = launch only.</span>
+                </div>
               </div>
-              <div className="owner-share">
-                <strong>{OWNER_FEE_BPS / 100}% of every trade is held for the owner</strong>
-                <span className="small">
-                  It goes to the mapin owner escrow ({shortenAddress(OWNER_ESCROW_ADDRESS)}) and is paid out when the real owner claims {business.name}. This is fixed for every business.
-                </span>
+
+              <div className="field">
+                <span className="label">Creator fees</span>
+                <div className="seg" role="group" aria-label="Creator fees">
+                  <button type="button" aria-pressed={feeOn} onClick={() => setFeeOn(true)}>Earn creator fees</button>
+                  <button type="button" aria-pressed={!feeOn} onClick={() => setFeeOn(false)}>No fees</button>
+                </div>
+                <span className="hint">Creator fees take a percentage of every buy and sell and pay it to your wallet ({address ? shortenAddress(address) : "the creator"}).</span>
               </div>
+              {feeOn ? (
+                <div className="grid grid-2">
+                  <div className="field">
+                    <label className="label" htmlFor="bf">Fee on buys</label>
+                    <div className="input-group"><input id="bf" className="input" value={buyFee} onChange={(e) => setBuyFee(e.target.value)} /><span className="addon">%</span></div>
+                  </div>
+                  <div className="field">
+                    <label className="label" htmlFor="sf">Fee on sells</label>
+                    <div className="input-group"><input id="sf" className="input" value={sellFee} onChange={(e) => setSellFee(e.target.value)} /><span className="addon">%</span></div>
+                  </div>
+                  <div className="field">
+                    <label className="label" htmlFor="fd">Fee duration</label>
+                    <select id="fd" className="select" value={feeDays} onChange={(e) => setFeeDays(Number(e.target.value))}>
+                      {FEE_DURATIONS.map((d) => <option key={d.days} value={d.days}>{d.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label className="label" htmlFor="af">Anti-farming window</label>
+                    <select id="af" className="select" value={antiHours} onChange={(e) => setAntiHours(Number(e.target.value))}>
+                      {ANTI_FARMER.map((d) => <option key={d.hours} value={d.hours}>{d.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="field" style={{ gridColumn: "1 / -1" }}>
+                    <button type="button" className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => setAdvanced((v) => !v)}>
+                      {advanced ? "▾" : "▸"} Fee split (advanced)
+                    </button>
+                    {advanced ? (
+                      <div className="grid grid-3">
+                        <div className="input-group"><input aria-label="Creator share" className="input" value={splitCreator} onChange={(e) => setSplitCreator(e.target.value)} /><span className="addon">% creator</span></div>
+                        <div className="input-group"><input aria-label="Burn share" className="input" value={splitBurn} onChange={(e) => setSplitBurn(e.target.value)} /><span className="addon">% burn</span></div>
+                        <div className="input-group"><input aria-label="Liquidity share" className="input" value={splitLp} onChange={(e) => setSplitLp(e.target.value)} /><span className="addon">% liquidity</span></div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
               {market.errors.length ? <Notice tone="warn">{market.errors.join(" · ")}</Notice> : null}
               <div className="row between">
                 <button type="button" className="btn" onClick={back}>← Back</button>
@@ -279,30 +342,33 @@ export function TokenizeWizard({ business }: { business: Business }) {
                 </div>
               </div>
               <dl className="review">
-                <dt>Business</dt><dd>{business.name}{where ? ` — ${where}` : ""}</dd>
-                <dt>Map location</dt><dd>{business.lat.toFixed(5)}, {business.lng.toFixed(5)}</dd>
-                <dt>Your wallet</dt><dd>{address}</dd>
-                <dt>Pair</dt><dd>{symbol}/{quote.symbol}{quote.name && !quote.isNative ? ` (${quote.name})` : ""}</dd>
+                <dt>Place</dt><dd>{place.name}{place.region ? ` — ${place.region}` : ""}</dd>
+                <dt>Type</dt><dd>{place.placeType ?? "Area"}</dd>
+                <dt>Creator wallet</dt><dd>{address}</dd>
+                <dt>Pair</dt><dd>{symbol}/{quote.symbol}</dd>
                 <dt>Initial buy</dt><dd>{market.initial > 0n ? `${formatAmount(market.initial, quote.decimals, 8)} ${quote.symbol}` : "None"}</dd>
-                <dt>Owner share</dt><dd>{OWNER_FEE_BPS / 100}% of every buy and sell → owner escrow until claimed</dd>
+                <dt>Creator fees</dt>
+                <dd>
+                  {market.tax
+                    ? `Buy ${market.tax.buyBps / 100}% · Sell ${market.tax.sellBps / 100}% · ${market.tax.marketBps / 100}% to creator / ${market.tax.deflationBps / 100}% burn / ${market.tax.lpBps / 100}% liquidity · ${FEE_DURATIONS.find((d) => d.days === feeDays)?.label}`
+                    : "None"}
+                </dd>
                 <dt>Estimated fees</dt>
                 <dd>
-                  {launchFeeWei !== null ? `Launch fee ${formatAmount(launchFeeWei, 18, 8)} ETH` : "Launch fee unavailable"}
-                  {" · "}
                   {fee
-                    ? `Curve fee ${Number(fee.buyBps) / 100}%${initialFee && initialFee > 0n ? ` (≈ ${formatAmount(initialFee, quote.decimals, 8)} ${quote.symbol} on your initial buy incl. owner share)` : ""}`
-                    : "Trading fee unavailable"}
+                    ? `Protocol trading fee ${Number(fee.buyBps) / 100}% on buys${initialFee && initialFee > 0n ? ` (≈ ${formatAmount(initialFee, quote.decimals, 8)} ${quote.symbol} on your initial buy)` : ""}`
+                    : "Protocol fee unavailable"}
                   {" · "}Gas is shown in your wallet.
+                  {market.tax && !quote.isNative ? " · 0.000000001 BNB is attached (required for fee tokens with a token pair)." : ""}
                 </dd>
-                <dt>Supply</dt><dd>{launchTerms ? `${formatCompact(BigInt(launchTerms.supply), 18)} ${symbol} (fixed)` : "—"}</dd>
-                <dt>Graduation</dt><dd>{gradThreshold !== null ? `When ${formatAmount(gradThreshold, quote.decimals, 4)} ${quote.symbol} is raised, liquidity moves to a locked Uniswap v4 pool.` : "When the curve fills, liquidity moves to a locked Uniswap v4 pool."}</dd>
+                <dt>Graduation</dt><dd>At 80% of supply sold, liquidity migrates to a PancakeSwap v2 pool.</dd>
               </dl>
               <Notice tone="info">
-                One place = one token. This is a community token, not an official one from {business.name}. The launch is simulated on {CHAIN_NAME} first; if the simulation fails, nothing is sent.
+                One place = one token. The launch is simulated on {CHAIN_NAME} before your wallet opens; if the simulation fails, nothing is sent.
               </Notice>
               <div className="row between">
                 <button type="button" className="btn" onClick={back}>← Back</button>
-                <button type="button" className="btn btn-primary" onClick={next}>Continue →</button>
+                <button type="button" className="btn btn-primary" onClick={next}>Continue to launch →</button>
               </div>
             </div>
           ) : null}
@@ -310,8 +376,8 @@ export function TokenizeWizard({ business }: { business: Business }) {
           {step === 3 && quote && logo ? (
             <LaunchPanel
               input={{
-                businessId: business.id,
-                businessName: business.name,
+                placeId: place.id,
+                placeName: place.name,
                 description: description.trim(),
                 tokenName,
                 symbol,
@@ -320,6 +386,7 @@ export function TokenizeWizard({ business }: { business: Business }) {
                 telegram,
                 quote: { address: quote.address, symbol: quote.symbol, decimals: quote.decimals, isNative: quote.isNative },
                 initialBuy: market.initial,
+                tax: market.tax,
               }}
               onBack={back}
             />

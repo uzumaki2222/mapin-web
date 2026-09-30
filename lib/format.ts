@@ -40,7 +40,7 @@ export function timeAgo(iso: string): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-/** Only http(s) links from user-controlled data (e.g. a business website) are rendered. */
+/** Only http(s) links from user-controlled data (e.g. a website) are rendered. */
 export function safeHttpUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   try {

@@ -1,97 +1,81 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decodeFunctionData, encodeFunctionData, type Address, type Hex } from "viem";
-import { buildLaunchPlan, randomSalt, type LaunchConfig } from "../lib/launch/params.ts";
-import { PONS_FACTORY, PONS_LAUNCH_ROUTER, ZERO_ADDRESS } from "../lib/contracts/constants.ts";
-import { ponsFactoryAbi, ponsLaunchRouterAbi } from "../lib/contracts/pons-abi.ts";
+import { buildLaunchPlan, vanityTargetFor, DAY, type LaunchConfig } from "../lib/launch/params.ts";
+import {
+  STANDARD_TOKEN_IMPL, TAX_TOKEN_V3_IMPL, TokenVersion, ZERO_ADDRESS, DexThreshType, MigratorType,
+} from "../lib/contracts/constants.ts";
 import { ValidationError } from "../lib/validation/normalize.ts";
 
-const E = 10n ** 18n;
-const creator = "0x1234567890abcdef1234567890abcdef12345678" as Address;
-const escrow = "0xe5c0e5c0e5c0e5c0e5c0e5c0e5c0e5c0e5c0e5c0" as Address;
-const terms = {
-  launchFee: 5n * 10n ** 14n, // 0.0005 ETH
-  maxCreatorTaxBps: 1000n,
-  supply: 1_000_000_000n * E,
-  curveFeeBps: 100n,
-  phantomQuote: 168n * E / 100n,
-  graduationThreshold: 42n * E / 10n,
-  expectedEconomics: ("0x" + "ab".repeat(32)) as Hex,
-  launchForwarder: PONS_LAUNCH_ROUTER,
-  pairToken: ZERO_ADDRESS as Address,
-  pairApproved: true,
-};
-const TSLA = "0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1" as Address;
+const CID = "bafkreibwjuzzns6yf4wytfr5nk6vujb4yja4iejff2k76nshn2z5jkmiy4";
+const USD1 = "0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d";
+const creator = "0x1234567890abcdef1234567890abcdef12345678" as const;
+const salt = ("0x" + "ab".repeat(32)) as `0x${string}`;
+
 const base: LaunchConfig = {
-  name: "Warung Sari Rasa", symbol: "wsr", logoUrl: "https://mapin.example/api/ipfs/bafkreiabc", description: "A warung",
-  website: "https://mapin.example/b/warung-sari-rasa-a1b2c3", twitter: "", telegram: "", creator, feeRecipient: escrow, creatorFeeBps: 70, initialBuy: 0n,
-  salt: ("0x" + "cd".repeat(32)) as Hex, terms,
+  name: "Coded Project", symbol: "code", metaCid: CID, salt, quoteToken: ZERO_ADDRESS,
+  initialBuy: 10n ** 16n, creator, tax: null,
 };
 
-test("no initial buy → factory.launchToken with msg.value == launchFee", () => {
+test("non-tax native launch", () => {
   const p = buildLaunchPlan(base);
-  assert.equal(p.route, "factory");
-  assert.equal(p.to, PONS_FACTORY);
-  assert.equal(p.value, terms.launchFee);
-  assert.equal(p.params.symbol, "WSR");
-  assert.equal(p.params.socials.website, "https://mapin.example/b/warung-sari-rasa-a1b2c3");
-  assert.equal(p.params.creatorFeeRecipient, escrow);
-  assert.equal(p.params.creatorTaxBps, 70);
-  assert.equal(p.params.expectedEconomics, terms.expectedEconomics);
-  assert.equal(p.args[2], ZERO_ADDRESS); // native ETH pair
-  if (p.route !== "factory") throw new Error("route");
-  const data = encodeFunctionData({ abi: ponsFactoryAbi, functionName: "launchToken", args: p.args });
-  assert.equal(data.slice(0, 10), "0xa72101af");
-  const back = decodeFunctionData({ abi: ponsFactoryAbi, data });
-  assert.equal((back.args![0] as { name: string }).name, "Warung Sari Rasa");
+  assert.equal(p.tokenVersion, TokenVersion.TOKEN_V2_PERMIT);
+  assert.equal(p.tokenImpl, STANDARD_TOKEN_IMPL);
+  assert.equal(p.vanitySuffix, "8888");
+  assert.equal(p.value, 10n ** 16n); // msg.value == quoteAmt
+  assert.equal(p.erc20Approval, 0n);
+  assert.equal(p.args.symbol, "CODE");
+  assert.equal(p.args.quoteAmt, 10n ** 16n);
+  assert.equal(p.args.beneficiary, creator);
+  assert.equal(p.args.buyTaxRate, 0);
+  assert.equal(p.args.sellTaxRate, 0);
+  assert.equal(p.args.mktBps, 0);
+  assert.equal(p.args.commissionReceiver, ZERO_ADDRESS);
+  assert.equal(p.args.dexThresh, DexThreshType.FOUR_FIFTHS);
+  assert.equal(p.args.migratorType, MigratorType.V2_MIGRATOR);
+  assert.equal(p.args.permitData, "0x");
+  assert.equal(p.args.meta, CID);
+  // field order must match NewTokenV6Params in IPortal.sol
+  assert.deepEqual(Object.keys(p.args), [
+    "name", "symbol", "meta", "dexThresh", "salt", "migratorType", "quoteToken", "quoteAmt", "beneficiary",
+    "permitData", "extensionID", "extensionData", "dexId", "lpFeeProfile", "buyTaxRate", "sellTaxRate",
+    "taxDuration", "antiFarmerDuration", "mktBps", "deflationBps", "dividendBps", "lpBps",
+    "minimumShareBalance", "dividendToken", "commissionReceiver", "tokenVersion",
+  ]);
 });
 
-test("initial buy → atomic launchAndBuy through the pinned router", () => {
-  const p = buildLaunchPlan({ ...base, initialBuy: E / 10n, creatorFeeBps: 250 });
-  assert.equal(p.route, "router");
-  if (p.route !== "router") throw new Error("route");
-  assert.equal(p.to, PONS_LAUNCH_ROUTER);
-  assert.equal(p.value, terms.launchFee + E / 10n);
-  assert.equal(p.args[3], E / 10n);
-  assert.ok(p.args[4] > 0n && p.args[4] < p.expectedTokens);
-  assert.equal(p.args[5], creator); // opening-buy tokens go to the launcher
-  assert.equal(p.params.creatorFeeRecipient, escrow); // the fee never does
-  assert.equal(p.params.creatorTaxBps, 250);
-  const data = encodeFunctionData({ abi: ponsLaunchRouterAbi, functionName: "launchAndBuy", args: p.args });
-  assert.equal(data.slice(0, 10), "0xf85f8e41");
+const tax = { buyBps: 300, sellBps: 500, durationSeconds: 365n * DAY, antiFarmerSeconds: 3600n, marketBps: 8000, deflationBps: 1000, lpBps: 1000 };
+
+test("tax launch with native quote", () => {
+  const p = buildLaunchPlan({ ...base, tax });
+  assert.equal(p.tokenVersion, TokenVersion.TOKEN_TAXED_V3);
+  assert.equal(p.tokenImpl, TAX_TOKEN_V3_IMPL);
+  assert.equal(p.vanitySuffix, "7777");
+  assert.equal(p.args.buyTaxRate, 300);
+  assert.equal(p.args.sellTaxRate, 500);
+  assert.equal(p.args.mktBps + p.args.deflationBps + p.args.dividendBps + p.args.lpBps, 10_000);
+  assert.equal(p.args.dividendToken, ZERO_ADDRESS);
+  assert.equal(p.value, 10n ** 16n);
 });
 
-test("refuses an unverified launch router", () => {
-  assert.throws(() => buildLaunchPlan({ ...base, initialBuy: 1n, terms: { ...terms, launchForwarder: "0x9999999999999999999999999999999999999999" } }), ValidationError);
-  // without an initial buy the router is not used, so drift does not matter
-  assert.equal(buildLaunchPlan({ ...base, terms: { ...terms, launchForwarder: "0x9999999999999999999999999999999999999999" } }).route, "factory");
+test("tax launch with ERC-20 quote needs approval and 1 gwei", () => {
+  const p = buildLaunchPlan({ ...base, quoteToken: USD1, initialBuy: 5n * 10n ** 18n, tax });
+  assert.equal(p.value, 1_000_000_000n);
+  assert.equal(p.erc20Approval, 5n * 10n ** 18n);
+  assert.equal(p.args.dividendToken, USD1);
+  const nonTax = buildLaunchPlan({ ...base, quoteToken: USD1, initialBuy: 0n });
+  assert.equal(nonTax.value, 0n);
+  assert.equal(nonTax.erc20Approval, 0n);
 });
 
-test("validation", () => {
-  assert.throws(() => buildLaunchPlan({ ...base, creatorFeeBps: 1001 }), ValidationError);
-  assert.throws(() => buildLaunchPlan({ ...base, feeRecipient: ZERO_ADDRESS }), ValidationError);
-  assert.throws(() => buildLaunchPlan({ ...base, creatorFeeBps: 600, terms: { ...terms, maxCreatorTaxBps: 500n } }), ValidationError);
-  assert.throws(() => buildLaunchPlan({ ...base, terms: { ...terms, expectedEconomics: ("0x" + "0".repeat(64)) as Hex } }), ValidationError);
-  assert.throws(() => buildLaunchPlan({ ...base, logoUrl: "ipfs://x" }), ValidationError);
-  assert.throws(() => buildLaunchPlan({ ...base, description: "x".repeat(2049) }), ValidationError);
+test("launch validation", () => {
+  assert.throws(() => buildLaunchPlan({ ...base, metaCid: "not-a-cid" }), ValidationError);
+  assert.throws(() => buildLaunchPlan({ ...base, salt: "0x1234" }), ValidationError);
   assert.throws(() => buildLaunchPlan({ ...base, creator: ZERO_ADDRESS }), ValidationError);
-  assert.match(randomSalt(), /^0x[0-9a-f]{64}$/);
-  assert.notEqual(randomSalt(), randomSalt());
-});
-
-test("stock-token pair → factory launch (fee in ETH) + separate curve buy", () => {
-  const stockTerms = { ...terms, pairToken: TSLA, phantomQuote: 5n * E, graduationThreshold: 12n * E };
-  const p = buildLaunchPlan({ ...base, initialBuy: 2n * E, terms: stockTerms });
-  assert.equal(p.route, "factory");
-  if (p.route !== "factory") throw new Error("route");
-  assert.equal(p.args[2], TSLA);
-  assert.equal(p.value, terms.launchFee); // no stock amount in msg.value
-  assert.ok(p.followUpBuy);
-  assert.equal(p.followUpBuy!.amount, 2n * E);
-  assert.ok(p.followUpBuy!.minTokensOut > 0n && p.followUpBuy!.minTokensOut < p.followUpBuy!.expectedTokens);
-  // no initial buy → no follow-up
-  const q = buildLaunchPlan({ ...base, terms: stockTerms });
-  assert.equal(q.route === "factory" ? q.followUpBuy : "x", null);
-  // a revoked / unapproved asset is refused before anything is sent
-  assert.throws(() => buildLaunchPlan({ ...base, terms: { ...stockTerms, pairApproved: false } }), ValidationError);
+  assert.throws(() => buildLaunchPlan({ ...base, initialBuy: -1n }), ValidationError);
+  assert.throws(() => buildLaunchPlan({ ...base, tax: { ...tax, buyBps: 2000 } }), ValidationError);
+  assert.throws(() => buildLaunchPlan({ ...base, tax: { ...tax, buyBps: 0, sellBps: 0 } }), ValidationError);
+  assert.throws(() => buildLaunchPlan({ ...base, tax: { ...tax, lpBps: 0 } }), ValidationError);
+  assert.throws(() => buildLaunchPlan({ ...base, tax: { ...tax, durationSeconds: DAY } }), ValidationError);
+  assert.throws(() => buildLaunchPlan({ ...base, tax: { ...tax, antiFarmerSeconds: 10n } }), ValidationError);
+  assert.deepEqual(vanityTargetFor(true), { tokenImpl: TAX_TOKEN_V3_IMPL, suffix: "7777" });
 });

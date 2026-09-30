@@ -59,7 +59,7 @@ export function ExploreView() {
     <div className="container section">
       <div className="row between" style={{ marginBottom: 12 }}>
         <h1 style={{ margin: 0, fontSize: "2rem" }}>Explore</h1>
-        <Link href="/" className="btn btn-primary">Open the map</Link>
+        <Link href="/app" className="btn btn-primary">Open the map</Link>
       </div>
 
       <LiveFeed />
@@ -78,7 +78,7 @@ export function ExploreView() {
           <input
             id="search"
             className="input"
-            placeholder="Business, city, country, ticker or token address (0x…)"
+            placeholder="Place, country, ticker or token address (0x…)"
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
@@ -111,7 +111,7 @@ export function ExploreView() {
       ) : markets.data && markets.data.items.length === 0 ? (
         <div className="empty">
           {q ? <p>No market matches “{q}”.</p> : section === "trending" ? <p>No trades in the last 24 hours yet.</p> : <p>No markets here yet.</p>}
-          <Link href="/" className="btn btn-primary">Find a business on the map</Link>
+          <Link href="/app" className="btn btn-primary">Pick a place on the map</Link>
         </div>
       ) : (
         <>

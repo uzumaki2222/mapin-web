@@ -1,13 +1,14 @@
 import "server-only";
-import { getAddress, parseAbiItem, type Address, type Hex, type Log, type PublicClient } from "viem";
+import { decodeEventLog, getAddress, parseAbiItem, type Address, type Log, type PublicClient } from "viem";
 import { db, query } from "@/lib/database/pool";
+import { portalAbi } from "@/lib/contracts/portal-abi";
 import { erc20Abi } from "@/lib/contracts/erc20-abi";
-import { PONS_FACTORY, V4_POOL_MANAGER, ZERO_ADDRESS } from "@/lib/contracts/constants";
+import { pancakeV2PairAbi } from "@/lib/contracts/pancake-abi";
+import { PORTAL_ADDRESS, ZERO_ADDRESS } from "@/lib/contracts/constants";
 import { readLensState, verifyDexPool } from "@/lib/market/onchain";
 import { phaseFromStatus } from "@/lib/market/state";
 import { fetchTokenMetadata } from "@/lib/metadata/upload";
 import { finalizeLaunch } from "@/lib/market/finalize";
-import { decodeCurveTrade } from "@/lib/launch/receipt";
 import type { LaunchIntentRow } from "@/lib/database/queries";
 import { serverEnv } from "@/lib/config/server";
 
@@ -15,29 +16,24 @@ import { serverEnv } from "@/lib/config/server";
 //  * cursor + block hash in indexer_state; recent hashes in indexer_blocks for reorg rewind
 //  * processes only blocks CONFIRMATIONS behind head; every insert is ON CONFLICT DO NOTHING
 //  * a Postgres advisory lock guarantees a single writer across processes / cron invocations
-//
-// Robinhood Chain produces ~10 blocks per second, so spans are large (INDEXER_CHUNK, default 20k).
 
 const STATE = "main";
-const CONFIRMATIONS = 20n; // ~2 s on Robinhood Chain
+const CONFIRMATIONS = 5n;
+const CHUNK = 1_000n; // eth_getLogs block span per request
 const KEEP_BLOCK_HASHES = 256n;
 const LOCK_KEY = 0x0c0dedn; // arbitrary constant
 
-const TOKEN_LAUNCHED = parseAbiItem("event TokenLaunched(address indexed token, address indexed curve, address indexed deployer, address pairToken, uint256 launchConfigId, uint256 graduationThreshold)");
-const POOL_GRADUATED = parseAbiItem("event PoolGraduated(address indexed token, uint256 positionId, uint256 tokenAmount, uint256 pairTokenAmount)");
-const CURVE_BUY = parseAbiItem("event CurveBuy(address indexed buyer, address indexed recipient, uint256 quoteIn, uint256 tokensOut, uint256 fee, uint256 tax)");
-const CURVE_SELL = parseAbiItem("event CurveSell(address indexed seller, address indexed recipient, uint256 tokensIn, uint256 quoteOut, uint256 fee, uint256 tax)");
+const TOKEN_BOUGHT = parseAbiItem("event TokenBought(uint256 ts, address token, address buyer, uint256 amount, uint256 eth, uint256 fee, uint256 postPrice)");
+const TOKEN_SOLD = parseAbiItem("event TokenSold(uint256 ts, address token, address seller, uint256 amount, uint256 eth, uint256 fee, uint256 postPrice)");
+const LAUNCHED_TO_DEX = parseAbiItem("event LaunchedToDEX(address token, address pool, uint256 amount, uint256 eth)");
+const TOKEN_CREATED = parseAbiItem("event TokenCreated(uint256 ts, address creator, uint256 nonce, address token, string name, string symbol, string meta)");
 const TRANSFER = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
-const V4_SWAP = parseAbiItem("event Swap(bytes32 indexed id, address indexed sender, int128 amount0, int128 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick, uint24 fee)");
+const SWAP = parseAbiItem("event Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, address indexed to)");
 
 interface MarketRef {
   id: string;
   token: string;
-  curve: string | null;
-  /** Uniswap v4 pool id after graduation */
   pool: string | null;
-  /** pair asset (zero address = ETH) */
-  quote: string;
   launchBlock: bigint;
 }
 
@@ -97,19 +93,16 @@ async function pass(client: PublicClient): Promise<IndexerPassResult> {
   }
 
   if (last >= head) return { from: null, to: null, head, caughtUp: true, inserted: 0, reorgRewoundTo };
-  const chunk = BigInt(serverEnv().INDEXER_CHUNK);
   const from = last + 1n;
-  const to = from + chunk - 1n < head ? from + chunk - 1n : head;
+  const to = from + CHUNK - 1n < head ? from + CHUNK - 1n : head;
 
   const markets = await loadMarkets();
   const byToken = new Map(markets.map((m) => [m.token, m]));
-  const byCurve = new Map(markets.filter((m) => m.curve).map((m) => [m.curve!, m]));
   const byPool = new Map(markets.filter((m) => m.pool).map((m) => [m.pool!, m]));
   const intents = await query<LaunchIntentRow>(
     `SELECT * FROM launch_intents WHERE consumed_at IS NULL AND created_at > now() - interval '2 days'`,
   );
-  const intentsByCreator = new Map<string, LaunchIntentRow[]>();
-  for (const i of intents) intentsByCreator.set(lc(i.creator_wallet), [...(intentsByCreator.get(lc(i.creator_wallet)) ?? []), i]);
+  const intentByToken = new Map(intents.filter((i) => i.predicted_token).map((i) => [lc(i.predicted_token!), i]));
 
   let inserted = 0;
   const blockCache = new Map<bigint, { hash: string; ts: Date }>();
@@ -123,97 +116,80 @@ async function pass(client: PublicClient): Promise<IndexerPassResult> {
     return b;
   };
 
-  // ---- factory: launches (intent recovery when the browser closed) and graduations.
-  // TokenLaunched.deployer is indexed, so only launches by wallets with an open intent are fetched.
-  if (intentsByCreator.size) {
-    const creators = [...intentsByCreator.keys()] as Address[];
-    for (let i = 0; i < creators.length; i += 50) {
-      const logs = await client.getLogs({ address: PONS_FACTORY, event: TOKEN_LAUNCHED, args: { deployer: creators.slice(i, i + 50) }, fromBlock: from, toBlock: to });
-      for (const log of logs) {
-        if (byToken.has(lc(log.args.token!)) || !log.transactionHash) continue;
-        const receipt = await client.getTransactionReceipt({ hash: log.transactionHash });
-        for (const intent of intentsByCreator.get(lc(log.args.deployer!)) ?? []) {
-          try {
-            const done = await finalizeLaunch(client, intent, receipt);
-            if (!done.alreadyRecorded) {
-              inserted++;
-              console.info(`[indexer] recovered market ${done.slug} → ${done.tokenAddress}`);
-            }
-            break;
-          } catch {
-            /* not this intent's launch (different token metadata) — try the next intent */
+  // ---- Portal events: curve trades, graduation, creations (for intent recovery)
+  // The Portal serves every token on the chain and its event args are not indexed, so logs are
+  // filtered client-side. Skip the (large) request entirely when there is nothing to watch.
+  const watchedEvents = [
+    ...(markets.length ? [TOKEN_BOUGHT, TOKEN_SOLD, LAUNCHED_TO_DEX] : []),
+    ...(intents.length ? [TOKEN_CREATED] : []),
+  ];
+  const portalLogs = watchedEvents.length
+    ? await client.getLogs({ address: PORTAL_ADDRESS, events: watchedEvents, fromBlock: from, toBlock: to })
+    : [];
+  for (const log of portalLogs) {
+    const ev = decodeEventLog({ abi: portalAbi, data: log.data, topics: log.topics });
+    if (ev.eventName === "TokenCreated") {
+      const intent = intentByToken.get(lc(ev.args.token));
+      if (intent && log.transactionHash) {
+        try {
+          const receipt = await client.getTransactionReceipt({ hash: log.transactionHash });
+          const done = await finalizeLaunch(client, intent, receipt);
+          if (!done.alreadyRecorded) {
+            inserted++;
+            console.info(`[indexer] recovered market ${done.slug} → ${done.tokenAddress}`);
           }
+        } catch (err) {
+          console.error(`[indexer] could not finalize intent ${intent.id}`, err);
         }
       }
+      continue;
     }
-  }
-  if (markets.length) {
-    const tokens = [...byToken.keys()] as Address[];
-    for (let i = 0; i < tokens.length; i += 50) {
-      const logs = await client.getLogs({ address: PONS_FACTORY, event: POOL_GRADUATED, args: { token: tokens.slice(i, i + 50) }, fromBlock: from, toBlock: to });
-      for (const log of logs) {
-        const m = byToken.get(lc(log.args.token!));
-        if (!m) continue;
-        const blk = await blockInfo(log.blockNumber!);
-        inserted += await insertActivity({ marketId: m.id, type: "graduate", venue: "dex", wallet: null, log, blockHash: blk.hash, ts: blk.ts });
-        const verified = await verifyDexPool(client, getAddress(m.token)).catch(() => null);
-        await query(
-          `UPDATE markets SET status = 'graduated', pool_address = COALESCE($2, pool_address), graduated_at = COALESCE(graduated_at, $3),
-                  pool_verified_at = CASE WHEN $2 IS NOT NULL THEN now() ELSE pool_verified_at END WHERE id = $1`,
-          [m.id, verified ? lc(verified.poolId) : null, blk.ts],
-        );
-        if (verified) {
-          m.pool = lc(verified.poolId);
-          byPool.set(m.pool, m);
-        }
-      }
+    const tokenAddr = "token" in ev.args ? lc(ev.args.token as string) : "";
+    const m = byToken.get(tokenAddr);
+    if (!m) continue;
+    const blk = await blockInfo(log.blockNumber!);
+    if (ev.eventName === "TokenBought" || ev.eventName === "TokenSold") {
+      const buy = ev.eventName === "TokenBought";
+      const a = ev.args as { ts: bigint; amount: bigint; eth: bigint; fee: bigint; postPrice: bigint; buyer?: string; seller?: string };
+      inserted += await insertActivity({
+        marketId: m.id, type: buy ? "buy" : "sell", venue: "curve", wallet: lc((buy ? a.buyer : a.seller)!), log, blockHash: blk.hash,
+        amountIn: buy ? a.eth : a.amount, amountOut: buy ? a.amount : a.eth, quoteVolume: a.eth, fee: a.fee, postPrice: a.postPrice,
+        ts: new Date(Number(a.ts) * 1000),
+      });
+    } else if (ev.eventName === "LaunchedToDEX") {
+      const a = ev.args as { pool: string };
+      inserted += await insertActivity({ marketId: m.id, type: "graduate", venue: "dex", wallet: null, log, blockHash: blk.hash, ts: blk.ts });
+      await query(
+        `UPDATE markets SET status = 'graduated', pool_address = $2, graduated_at = COALESCE(graduated_at, $3) WHERE id = $1`,
+        [m.id, lc(a.pool), blk.ts],
+      );
+      m.pool = lc(a.pool);
+      byPool.set(m.pool, m);
     }
   }
 
-  // ---- bonding-curve trades (each market has its own curve contract)
-  if (byCurve.size) {
-    const curves = [...byCurve.keys()] as Address[];
-    for (let i = 0; i < curves.length; i += 50) {
-      const logs = await client.getLogs({ address: curves.slice(i, i + 50), events: [CURVE_BUY, CURVE_SELL], fromBlock: from, toBlock: to });
-      for (const log of logs) {
-        const m = byCurve.get(lc(log.address));
-        if (!m) continue;
-        const t = decodeCurveTrade(log as Log, log.address);
-        if (!t) continue;
-        const blk = await blockInfo(log.blockNumber!);
-        inserted += await insertActivity({
-          marketId: m.id, type: t.side, venue: "curve", wallet: lc(t.wallet), log: log as Log, blockHash: blk.hash,
-          amountIn: t.amountIn, amountOut: t.amountOut, quoteVolume: t.quoteVolume, fee: t.fee, ts: blk.ts,
-        });
-      }
-    }
-  }
-
-  // ---- Uniswap v4 swaps for graduated markets (PoolManager Swap, filtered by pool id).
-  // Deltas are from the swapper's side: negative = paid into the pool, positive = received.
+  // ---- PancakeSwap v2 swaps for graduated markets
   if (byPool.size) {
-    const pools = [...byPool.keys()] as Hex[];
+    const pools = [...byPool.keys()] as Address[];
     for (let i = 0; i < pools.length; i += 50) {
-      const logs = await client.getLogs({ address: V4_POOL_MANAGER, event: V4_SWAP, args: { id: pools.slice(i, i + 50) }, fromBlock: from, toBlock: to });
+      const logs = await client.getLogs({ address: pools.slice(i, i + 50), event: SWAP, fromBlock: from, toBlock: to });
       for (const log of logs) {
-        const m = byPool.get(lc(log.args.id!));
-        if (!m) continue;
-        // v4 sorts the pool currencies by address (native ETH, address 0, is always currency0).
-        const tokenIs0 = lc(m.token) < lc(m.quote);
-        const a0 = log.args.amount0!;
-        const a1 = log.args.amount1!;
-        const tokenDelta = tokenIs0 ? a0 : a1;
-        const quoteDelta = tokenIs0 ? a1 : a0;
-        const isBuy = tokenDelta > 0n && quoteDelta < 0n;
-        const isSell = tokenDelta < 0n && quoteDelta > 0n;
+        const m = byPool.get(lc(log.address))!;
+        const token0 = await pairToken0(client, log.address);
+        const tokenIs0 = token0 === m.token;
+        const { amount0In, amount1In, amount0Out, amount1Out } = log.args as { amount0In: bigint; amount1In: bigint; amount0Out: bigint; amount1Out: bigint };
+        const tokenOut = tokenIs0 ? amount0Out : amount1Out;
+        const tokenIn = tokenIs0 ? amount0In : amount1In;
+        const quoteIn = tokenIs0 ? amount1In : amount0In;
+        const quoteOut = tokenIs0 ? amount1Out : amount0Out;
+        const isBuy = tokenOut > 0n && quoteIn > 0n;
+        const isSell = tokenIn > 0n && quoteOut > 0n;
         if (!isBuy && !isSell) continue;
         const blk = await blockInfo(log.blockNumber!);
         const tx = await client.getTransaction({ hash: log.transactionHash! });
-        const abs = (v: bigint) => (v < 0n ? -v : v);
         inserted += await insertActivity({
-          marketId: m.id, type: isBuy ? "buy" : "sell", venue: "dex", wallet: lc(tx.from), log: log as Log, blockHash: blk.hash,
-          amountIn: isBuy ? abs(quoteDelta) : abs(tokenDelta), amountOut: isBuy ? tokenDelta : quoteDelta,
-          quoteVolume: abs(quoteDelta), ts: blk.ts,
+          marketId: m.id, type: isBuy ? "buy" : "sell", venue: "dex", wallet: lc(tx.from), log, blockHash: blk.hash,
+          amountIn: isBuy ? quoteIn : tokenIn, amountOut: isBuy ? tokenOut : quoteOut, quoteVolume: isBuy ? quoteIn : quoteOut, ts: blk.ts,
         });
       }
     }
@@ -239,7 +215,7 @@ async function pass(client: PublicClient): Promise<IndexerPassResult> {
   // ---- advance cursor (store hash for reorg detection)
   const toBlk = await blockInfo(to);
   await query(`INSERT INTO indexer_blocks (block_number, block_hash) VALUES ($1,$2) ON CONFLICT (block_number) DO UPDATE SET block_hash = EXCLUDED.block_hash`, [to.toString(), toBlk.hash]);
-  await query(`DELETE FROM indexer_blocks WHERE block_number < $1`, [(to - KEEP_BLOCK_HASHES * chunk).toString()]);
+  await query(`DELETE FROM indexer_blocks WHERE block_number < $1`, [(to - KEEP_BLOCK_HASHES * CHUNK).toString()]);
   await query(`UPDATE indexer_state SET last_block = $2, last_block_hash = $3, updated_at = now() WHERE name = $1`, [STATE, to.toString(), toBlk.hash]);
 
   return { from, to, head, caughtUp: to >= head, inserted, reorgRewoundTo };
@@ -256,7 +232,7 @@ async function findCommonAncestor(client: PublicClient, fromBlock: bigint): Prom
     if (lc(blk.hash!) === r.block_hash) return n;
   }
   // Nothing matched in the stored window: rewind a safe fixed distance.
-  return fromBlock - 2n * BigInt(serverEnv().INDEXER_CHUNK);
+  return fromBlock - 2n * CHUNK;
 }
 
 async function rewindTo(ancestor: bigint): Promise<void> {
@@ -269,13 +245,24 @@ async function rewindTo(ancestor: bigint): Promise<void> {
 }
 
 async function loadMarkets(): Promise<MarketRef[]> {
-  const rows = await query<{ id: string; token_address: string; curve_address: string | null; pool_address: string | null; quote_token: string; launch_block: string }>(
-    `SELECT id, token_address, curve_address, pool_address, quote_token, launch_block::text FROM markets`,
+  const rows = await query<{ id: string; token_address: string; pool_address: string | null; launch_block: string }>(
+    `SELECT id, token_address, pool_address, launch_block::text FROM markets`,
   );
-  return rows.map((r) => ({ id: r.id, token: r.token_address, curve: r.curve_address, pool: r.pool_address, quote: r.quote_token, launchBlock: BigInt(r.launch_block) }));
+  return rows.map((r) => ({ id: r.id, token: r.token_address, pool: r.pool_address, launchBlock: BigInt(r.launch_block) }));
 }
 
-async function insertActivity(a: {
+const token0Cache = new Map<string, string>();
+export async function pairToken0(client: PublicClient, pair: Address): Promise<string> {
+  const key = lc(pair);
+  let t = token0Cache.get(key);
+  if (!t) {
+    t = lc(await client.readContract({ address: pair, abi: pancakeV2PairAbi, functionName: "token0" }));
+    token0Cache.set(key, t);
+  }
+  return t;
+}
+
+export async function insertActivity(a: {
   marketId: string;
   type: "buy" | "sell" | "graduate";
   venue: "curve" | "dex";
@@ -307,8 +294,8 @@ async function insertActivity(a: {
 export async function refreshMarketStats(client: PublicClient, limit = 25): Promise<number> {
   const idx = await query<{ first_block: string }>(`SELECT first_block::text FROM indexer_state WHERE name = $1`, [STATE]);
   const firstIndexed = idx[0] ? BigInt(idx[0].first_block) : null;
-  const rows = await query<{ id: string; token_address: string; curve_address: string | null; launch_block: string; image_cid: string | null; meta_cid: string }>(
-    `SELECT id, token_address, curve_address, launch_block::text, image_cid, meta_cid FROM markets ORDER BY stats_updated_at NULLS FIRST LIMIT $1`,
+  const rows = await query<{ id: string; token_address: string; launch_block: string; image_cid: string | null; meta_cid: string }>(
+    `SELECT id, token_address, launch_block::text, image_cid, meta_cid FROM markets ORDER BY stats_updated_at NULLS FIRST LIMIT $1`,
     [limit],
   );
   let n = 0;
@@ -321,8 +308,8 @@ export async function refreshMarketStats(client: PublicClient, limit = 25): Prom
       let pool: string | null = null;
       let poolVerified = false;
       if (phase === "graduated") {
-        const v = await verifyDexPool(client, token);
-        pool = v ? lc(v.poolId) : lens.pool ? lc(lens.pool) : null;
+        const v = await verifyDexPool(client, token, lens);
+        pool = lc(lens.pool);
         poolVerified = Boolean(v);
       }
       // Holder counts are complete only if transfers were indexed since launch.
@@ -334,9 +321,8 @@ export async function refreshMarketStats(client: PublicClient, limit = 25): Prom
              SELECT addr FROM (
                SELECT to_address AS addr, value AS delta FROM token_transfers WHERE market_id = $1
                UNION ALL SELECT from_address, -value FROM token_transfers WHERE market_id = $1
-             ) t WHERE addr <> ALL($2::text[]) GROUP BY addr HAVING SUM(delta) > 0) x`,
-          // protocol-held balances (bonding curve, v4 pool manager) are not holders
-          [r.id, [ZERO_ADDRESS, r.curve_address ?? ZERO_ADDRESS, lc(V4_POOL_MANAGER)]],
+             ) t WHERE addr <> $2 GROUP BY addr HAVING SUM(delta) > 0) x`,
+          [r.id, ZERO_ADDRESS],
         );
         holders = Number(h[0]?.holders ?? 0);
       }

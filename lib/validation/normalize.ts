@@ -41,7 +41,7 @@ export function shortenAddress(address: string, chars = 4): string {
   return `${address.slice(0, 2 + chars)}…${address.slice(-chars)}`;
 }
 
-// ---------------------------------------------------------------- businesses
+// ---------------------------------------------------------------- places
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -49,7 +49,7 @@ export function isValidSlug(slug: string): boolean {
   return slug.length >= 3 && slug.length <= 80 && SLUG_RE.test(slug);
 }
 
-/** URL-safe ASCII slug of a business name ("Café Ñandú & Co." → "cafe-nandu-co"). */
+/** URL-safe ASCII slug of a place name ("Café Ñandú & Co." → "cafe-nandu-co"). */
 export function slugify(name: string): string {
   const s = name
     .normalize("NFKD")
@@ -60,27 +60,20 @@ export function slugify(name: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 60)
     .replace(/-+$/g, "");
-  return s || "business";
+  return s || "place";
 }
 
-/** ~11 m grid + name: the same place added twice by different people resolves to one business. */
-export function dedupeKey(name: string, lat: number, lng: number): string {
-  const n = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-  return `${n}@${lat.toFixed(4)},${lng.toFixed(4)}`;
-}
-
-/** Route path of a business market page. */
+/** Route path of a place market page. */
 export function marketPath(slug: string): string {
-  return `/b/${encodeURIComponent(slug)}`;
+  return `/p/${encodeURIComponent(slug)}`;
 }
 
-/** Suggested ticker from a business name: initials or the first letters, A–Z/0–9, 3–8 chars. */
+/** Suggested ticker from a place name: initials for several words ("New York City" → NYC), else the word (max 10). */
 export function suggestTicker(name: string): string {
   const words = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
-  if (!words.length) return "SHOP";
-  const joined = words.join("");
-  const t = words.length >= 3 ? words.map((w) => w[0]).join("") : joined;
-  return t.slice(0, 8).padEnd(3, "X");
+  if (!words.length) return "PLACE";
+  if (words.length >= 2) return words.map((w) => w[0]).join("").slice(0, 10);
+  return words[0]!.slice(0, 10);
 }
 
 /** Bare hostname of a website URL, lower-case, without "www." (null if not a valid http(s) URL). */

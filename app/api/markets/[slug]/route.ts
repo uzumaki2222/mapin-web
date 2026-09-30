@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   return handle("markets/[slug]", async () => {
     const slug = decodeURIComponent((await params).slug).toLowerCase();
-    if (!isValidSlug(slug)) throw notFound("No market exists for this business.");
+    if (!isValidSlug(slug)) throw notFound("No market exists for this place.");
     const market = await getMarketBySlug(slug);
-    if (!market) throw notFound("No market exists for this business.");
+    if (!market) throw notFound("No market exists for this place.");
     return NextResponse.json(market, { headers: { "Cache-Control": "public, max-age=5" } });
   });
 }

@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { indexIfDue } from "@/lib/indexer/auto";
 import { z } from "zod";
 import { listMapPins } from "@/lib/database/queries";
 import { handle } from "@/lib/errors/api";
@@ -16,10 +17,11 @@ const qp = z.object({
   limit: z.coerce.number().int().min(1).max(2000).default(1000),
 });
 
-/** Tokenized businesses for the map layer (everywhere, or inside ?bbox=west,south,east,north). */
+/** Tokenized places for the map layer (everywhere, or inside ?bbox=west,south,east,north). */
 export async function GET(req: Request) {
   return handle("map/pins", async () => {
     await rateLimit(`pins:${clientIp(req)}`, 240, 60);
+    after(indexIfDue);
     const p = qp.parse(Object.fromEntries(new URL(req.url).searchParams.entries()));
     const items = await listMapPins(p.bbox ?? null, p.limit);
     return NextResponse.json({ items }, { headers: { "Cache-Control": "public, max-age=10, stale-while-revalidate=60" } });

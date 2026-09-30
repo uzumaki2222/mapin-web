@@ -8,7 +8,7 @@ import { appOrigin } from "@/lib/config/server";
 import { serverPublicClient } from "@/lib/chain/server-client";
 import { upsertUserByWallet } from "@/lib/database/queries";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
-import { CHAIN_ID, CHAIN_NAME } from "@/lib/contracts/constants";
+import { BSC_CHAIN_ID } from "@/lib/contracts/constants";
 import { normalizeAddress } from "@/lib/validation/normalize";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     // Domain binding: the message must be for this exact site and chain.
     if (fields.domain !== origin.host) throw badRequest(`Sign-in message is for ${fields.domain}, expected ${origin.host}`);
     if (new URL(fields.uri).origin !== origin.origin) throw badRequest("Sign-in message URI does not match this site");
-    if (fields.chainId !== CHAIN_ID) throw badRequest(`Sign-in message must be for ${CHAIN_NAME} (chain ${CHAIN_ID})`);
+    if (fields.chainId !== BSC_CHAIN_ID) throw badRequest("Sign-in message must be for BNB Smart Chain (chain 56)");
     if (!fields.expirationTime || !fields.issuedAt) throw badRequest("Sign-in message must include issue and expiration times");
     if (fields.expirationTime.getTime() - fields.issuedAt.getTime() > MAX_VALIDITY_MS) throw badRequest("Sign-in message validity is too long");
 

@@ -1,9 +1,9 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { query, queryOne } from "@/lib/database/pool";
-import type { ActivityItem, Business, MapPin, MarketDetail, MarketSummary, PlaceCandidate, RecentTrade } from "@/lib/market/types";
+import type { ActivityItem, BBox, MapPin, MarketDetail, MarketSummary, Place, PlaceCandidate, RecentTrade } from "@/lib/market/types";
 import { marketCapWad } from "@/lib/market/math";
-import { dedupeKey, slugify } from "@/lib/validation/normalize";
+import { slugify } from "@/lib/validation/normalize";
 
 // ------------------------------------------------------------------ users
 
@@ -22,51 +22,51 @@ export async function upsertUserByWallet(wallet: string): Promise<UserRow> {
   return row!;
 }
 
-// ------------------------------------------------------------------ businesses
+// ------------------------------------------------------------------ places
 
-export interface BusinessRow {
+export interface PlaceRow {
   id: string;
-  source: "osm" | "user";
   source_id: string;
   slug: string;
   name: string;
-  category: string | null;
-  address: string | null;
-  city: string | null;
+  place_type: string | null;
+  region: string | null;
   country: string | null;
   country_code: string | null;
-  website: string | null;
   lat: number;
   lng: number;
-  claimed_wallet: string | null;
+  bbox_w: number | null;
+  bbox_s: number | null;
+  bbox_e: number | null;
+  bbox_n: number | null;
   hidden: boolean;
   market_symbol?: string | null;
   market_token?: string | null;
   market_image_cid?: string | null;
 }
 
-const BUSINESS_SELECT = `
-  SELECT b.id, b.source, b.source_id, b.slug, b.name, b.category, b.address, b.city, b.country, b.country_code,
-         b.website, b.lat, b.lng, b.claimed_wallet, b.hidden,
+const PLACE_SELECT = `
+  SELECT p.id, p.source_id, p.slug, p.name, p.place_type, p.region, p.country, p.country_code, p.lat, p.lng,
+         p.bbox_w, p.bbox_s, p.bbox_e, p.bbox_n, p.hidden,
          m.symbol AS market_symbol, m.token_address AS market_token, m.image_cid AS market_image_cid
-  FROM businesses b LEFT JOIN markets m ON m.business_id = b.id`;
+  FROM places p LEFT JOIN markets m ON m.place_id = p.id`;
 
-export function toBusiness(r: BusinessRow): Business {
+const bboxOf = (r: { bbox_w: number | null; bbox_s: number | null; bbox_e: number | null; bbox_n: number | null }): BBox | null =>
+  r.bbox_w !== null && r.bbox_s !== null && r.bbox_e !== null && r.bbox_n !== null ? [r.bbox_w, r.bbox_s, r.bbox_e, r.bbox_n] : null;
+
+export function toPlace(r: PlaceRow): Place {
   return {
     id: r.id,
-    source: r.source,
     sourceId: r.source_id,
     slug: r.slug,
     name: r.name,
-    category: r.category,
-    address: r.address,
-    city: r.city,
+    placeType: r.place_type,
+    region: r.region,
     country: r.country,
     countryCode: r.country_code,
-    website: r.website,
     lat: r.lat,
     lng: r.lng,
-    claimed: Boolean(r.claimed_wallet),
+    bbox: bboxOf(r),
     hidden: r.hidden,
     market: r.market_symbol && r.market_token
       ? { symbol: r.market_symbol, tokenAddress: r.market_token, imageUrl: r.market_image_cid ? `/api/ipfs/${r.market_image_cid}` : null }
@@ -74,91 +74,53 @@ export function toBusiness(r: BusinessRow): Business {
   };
 }
 
-export async function getBusinessById(id: string): Promise<BusinessRow | null> {
-  return queryOne<BusinessRow>(`${BUSINESS_SELECT} WHERE b.id = $1`, [id]);
+export async function getPlaceById(id: string): Promise<PlaceRow | null> {
+  return queryOne<PlaceRow>(`${PLACE_SELECT} WHERE p.id = $1`, [id]);
 }
 
-export async function getBusinessBySource(source: string, sourceId: string): Promise<BusinessRow | null> {
-  return queryOne<BusinessRow>(`${BUSINESS_SELECT} WHERE b.source = $1 AND b.source_id = $2`, [source, sourceId]);
-}
-
-/** A short random suffix keeps slugs unique and unguessable-enough without a lookup loop. */
+/** A short random suffix keeps slugs unique without a lookup loop. */
 function slugSuffix(): string {
   const b = crypto.getRandomValues(new Uint8Array(3));
   return Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
 }
 
 /**
- * Insert (or refresh) a business that exists in OpenStreetMap. Identity is the OSM element id; the
- * name and details are refreshed from OSM on every resolve while no market exists yet.
+ * Insert (or refresh) a place from OpenStreetMap. Identity is the OSM element id; details are
+ * refreshed on every lookup while no market exists yet (the name is frozen once tokenized).
  */
-export async function upsertOsmBusiness(p: PlaceCandidate, userId: string | null): Promise<BusinessRow> {
+export async function upsertPlace(p: PlaceCandidate, userId: string | null): Promise<PlaceRow> {
+  const [w, s, e, n] = p.bbox ?? [null, null, null, null];
   await query(
-    `INSERT INTO businesses (source, source_id, slug, name, category, address, city, country, country_code, website, lat, lng, added_by_user_id)
-     VALUES ('osm', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `INSERT INTO places (source_id, slug, name, place_type, region, country, country_code, lat, lng, bbox_w, bbox_s, bbox_e, bbox_n, added_by_user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      ON CONFLICT (source, source_id) DO UPDATE SET
-       name = CASE WHEN EXISTS (SELECT 1 FROM markets m WHERE m.business_id = businesses.id) THEN businesses.name ELSE EXCLUDED.name END,
-       category = EXCLUDED.category, address = EXCLUDED.address, city = EXCLUDED.city, country = EXCLUDED.country,
-       country_code = EXCLUDED.country_code, website = EXCLUDED.website, lat = EXCLUDED.lat, lng = EXCLUDED.lng,
-       updated_at = now()`,
-    [p.sourceId, `${slugify(p.name)}-${slugSuffix()}`, p.name, p.category, p.address, p.city, p.country, p.countryCode,
-      p.website, p.lat, p.lng, userId],
+       name = CASE WHEN EXISTS (SELECT 1 FROM markets m WHERE m.place_id = places.id) THEN places.name ELSE EXCLUDED.name END,
+       place_type = EXCLUDED.place_type, region = EXCLUDED.region, country = EXCLUDED.country, country_code = EXCLUDED.country_code,
+       lat = EXCLUDED.lat, lng = EXCLUDED.lng, bbox_w = EXCLUDED.bbox_w, bbox_s = EXCLUDED.bbox_s, bbox_e = EXCLUDED.bbox_e,
+       bbox_n = EXCLUDED.bbox_n, updated_at = now()`,
+    [p.sourceId, `${slugify(p.name)}-${slugSuffix()}`, p.name, p.placeType, p.region, p.country, p.countryCode, p.lat, p.lng,
+      w, s, e, n, userId],
   );
-  return (await getBusinessBySource("osm", p.sourceId))!;
+  return (await queryOne<PlaceRow>(`${PLACE_SELECT} WHERE p.source = 'osm' AND p.source_id = $1`, [p.sourceId]))!;
 }
 
-export interface NewUserBusiness {
-  name: string;
-  category: string | null;
-  address: string | null;
-  website: string | null;
-  lat: number;
-  lng: number;
-  city: string | null;
-  country: string | null;
-  countryCode: string | null;
-}
-
-export async function insertUserBusiness(b: NewUserBusiness, userId: string): Promise<BusinessRow> {
-  const key = dedupeKey(b.name, b.lat, b.lng);
-  const existing = await queryOne<BusinessRow>(`${BUSINESS_SELECT} WHERE b.dedupe_key = $1`, [key]);
-  if (existing) return existing;
-  const id = slugSuffix() + slugSuffix();
-  await query(
-    `INSERT INTO businesses (source, source_id, slug, name, category, address, city, country, country_code, website, lat, lng,
-                             dedupe_key, added_by_user_id)
-     VALUES ('user', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-     ON CONFLICT (dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING`,
-    [id, `${slugify(b.name)}-${slugSuffix()}`, b.name, b.category, b.address, b.city, b.country, b.countryCode, b.website,
-      b.lat, b.lng, key, userId],
-  );
-  return (await queryOne<BusinessRow>(`${BUSINESS_SELECT} WHERE b.dedupe_key = $1`, [key]))!;
-}
-
-/** Tokenized, visible businesses inside a bounding box (or everywhere), busiest first. */
-export async function listMapPins(bbox: [number, number, number, number] | null, limit: number): Promise<MapPin[]> {
+/** Tokenized, visible places inside a bounding box (or everywhere), busiest first. */
+export async function listMapPins(bbox: BBox | null, limit: number): Promise<MapPin[]> {
   const params: unknown[] = [limit];
-  let where = `b.hidden = false`;
+  let where = `p.hidden = false`;
   if (bbox) {
     const [w, s, e, n] = bbox;
-    params.push(s, n);
-    where += ` AND b.lat BETWEEN $2 AND $3`;
-    if (w <= e) {
-      params.push(w, e);
-      where += ` AND b.lng BETWEEN $4 AND $5`;
-    } else {
-      // box crosses the antimeridian
-      params.push(w, e);
-      where += ` AND (b.lng >= $4 OR b.lng <= $5)`;
-    }
+    params.push(s, n, w, e);
+    where += ` AND p.lat BETWEEN $2 AND $3`;
+    where += w <= e ? ` AND p.lng BETWEEN $4 AND $5` : ` AND (p.lng >= $4 OR p.lng <= $5)`;
   }
   const rows = await query<{
-    slug: string; name: string; symbol: string; category: string | null; lat: number; lng: number; image_cid: string | null;
-    claimed_wallet: string | null; volume: string; quote_symbol: string; quote_decimals: number;
+    slug: string; name: string; symbol: string; place_type: string | null; lat: number; lng: number; image_cid: string | null;
+    volume: string; quote_symbol: string; quote_decimals: number;
   }>(
-    `SELECT b.slug, b.name, m.symbol, b.category, b.lat, b.lng, m.image_cid, b.claimed_wallet, m.quote_symbol, m.quote_decimals,
+    `SELECT p.slug, p.name, m.symbol, p.place_type, p.lat, p.lng, m.image_cid, m.quote_symbol, m.quote_decimals,
             COALESCE(v.volume, 0)::text AS volume
-     FROM markets m JOIN businesses b ON b.id = m.business_id
+     FROM markets m JOIN places p ON p.id = m.place_id
      LEFT JOIN LATERAL (
        SELECT SUM(a.quote_volume) AS volume FROM activity a
        WHERE a.market_id = m.id AND a.type IN ('buy','sell') AND a."timestamp" > now() - interval '24 hours'
@@ -169,9 +131,9 @@ export async function listMapPins(bbox: [number, number, number, number] | null,
     params,
   );
   return rows.map((r) => ({
-    slug: r.slug, name: r.name, symbol: r.symbol, category: r.category, lat: r.lat, lng: r.lng,
-    imageUrl: r.image_cid ? `/api/ipfs/${r.image_cid}` : null, claimed: Boolean(r.claimed_wallet),
-    volume24h: r.volume, quoteSymbol: r.quote_symbol, quoteDecimals: r.quote_decimals,
+    slug: r.slug, name: r.name, symbol: r.symbol, placeType: r.place_type, lat: r.lat, lng: r.lng,
+    imageUrl: r.image_cid ? `/api/ipfs/${r.image_cid}` : null, volume24h: r.volume, quoteSymbol: r.quote_symbol,
+    quoteDecimals: r.quote_decimals,
   }));
 }
 
@@ -179,7 +141,7 @@ export async function listMapPins(bbox: [number, number, number, number] | null,
 
 export interface LaunchIntentRow {
   id: string;
-  business_id: string;
+  place_id: string;
   creator_wallet: string;
   predicted_token: string | null;
   meta_cid: string;
@@ -191,30 +153,30 @@ export interface LaunchIntentRow {
   consumed_at: Date | null;
 }
 
-export async function activeIntentForBusiness(businessId: string, client?: PoolClient): Promise<LaunchIntentRow | null> {
-  const sql = `SELECT * FROM launch_intents WHERE business_id = $1 AND consumed_at IS NULL AND expires_at > now()
+export async function activeIntentForPlace(placeId: string, client?: PoolClient): Promise<LaunchIntentRow | null> {
+  const sql = `SELECT * FROM launch_intents WHERE place_id = $1 AND consumed_at IS NULL AND expires_at > now()
                ORDER BY created_at DESC LIMIT 1`;
-  if (client) return (await client.query<LaunchIntentRow>(sql, [businessId])).rows[0] ?? null;
-  return queryOne<LaunchIntentRow>(sql, [businessId]);
+  if (client) return (await client.query<LaunchIntentRow>(sql, [placeId])).rows[0] ?? null;
+  return queryOne<LaunchIntentRow>(sql, [placeId]);
 }
 
 // ------------------------------------------------------------------ markets
 
 interface MarketJoinRow {
   id: string;
-  business_id: string;
-  source: "osm" | "user";
+  place_id: string;
   source_id: string;
   slug: string;
-  business_name: string;
-  category: string | null;
-  address: string | null;
-  city: string | null;
+  place_name: string;
+  place_type: string | null;
+  region: string | null;
   country: string | null;
-  website: string | null;
   lat: number;
   lng: number;
-  claimed_wallet: string | null;
+  bbox_w: number | null;
+  bbox_s: number | null;
+  bbox_e: number | null;
+  bbox_n: number | null;
   hidden: boolean;
   project_name: string;
   token_name: string;
@@ -247,15 +209,15 @@ interface MarketJoinRow {
 }
 
 const MARKET_SELECT = `
-  SELECT m.id, b.id AS business_id, b.source, b.source_id, b.slug, b.name AS business_name, b.category, b.address, b.city,
-         b.country, b.website, b.lat, b.lng, b.claimed_wallet, b.hidden,
+  SELECT m.id, p.id AS place_id, p.source_id, p.slug, p.name AS place_name, p.place_type, p.region,
+         p.country, p.lat, p.lng, p.bbox_w, p.bbox_s, p.bbox_e, p.bbox_n, p.hidden,
          m.project_name, m.token_name, m.symbol, m.token_address, m.creator_wallet, m.fee_recipient, m.quote_token, m.quote_symbol,
          m.quote_decimals, m.status, m.price_raw::text, m.total_supply_raw::text, m.progress_wad::text, m.holders,
          m.image_cid, m.meta_cid, m.description, m.launch_tx, m.launch_block::text, m.buy_tax_bps, m.sell_tax_bps,
          m.token_version, m.pool_address, m.created_at, m.stats_updated_at,
          COALESCE(v.volume, 0)::text AS volume_24h, COALESCE(v.trades, 0)::text AS trades_24h
   FROM markets m
-  JOIN businesses b ON b.id = m.business_id
+  JOIN places p ON p.id = m.place_id
   LEFT JOIN LATERAL (
     SELECT SUM(a.quote_volume) AS volume, COUNT(*) AS trades FROM activity a
     WHERE a.market_id = m.id AND a.type IN ('buy','sell') AND a."timestamp" > now() - interval '24 hours'
@@ -267,13 +229,12 @@ function toSummary(r: MarketJoinRow): MarketSummary {
   return {
     id: r.id,
     slug: r.slug,
-    businessName: r.business_name,
-    category: r.category,
-    city: r.city,
+    placeName: r.place_name,
+    placeType: r.place_type,
+    region: r.region,
     country: r.country,
     lat: r.lat,
     lng: r.lng,
-    claimed: Boolean(r.claimed_wallet),
     projectName: r.project_name,
     tokenName: r.token_name,
     symbol: r.symbol,
@@ -306,7 +267,7 @@ export interface MarketListParams {
 }
 
 export async function listMarkets(p: MarketListParams): Promise<{ items: MarketSummary[]; total: number }> {
-  const where: string[] = [`b.hidden = false`];
+  const where: string[] = [`p.hidden = false`];
   const params: unknown[] = [];
   const add = (v: unknown) => {
     params.push(v);
@@ -321,7 +282,7 @@ export async function listMarkets(p: MarketListParams): Promise<{ items: MarketS
       where.push(`m.token_address = ${add(q.toLowerCase())}`);
     } else {
       const like = add(`%${q.replace(/[\\%_]/g, (c) => "\\" + c)}%`);
-      where.push(`(b.name ILIKE ${like} OR b.city ILIKE ${like} OR b.country ILIKE ${like} OR m.symbol ILIKE ${like} OR m.token_name ILIKE ${like})`);
+      where.push(`(p.name ILIKE ${like} OR p.region ILIKE ${like} OR p.country ILIKE ${like} OR m.symbol ILIKE ${like} OR m.token_name ILIKE ${like})`);
     }
   }
   if (p.section === "trending") where.push(`COALESCE(v.trades, 0) > 0`);
@@ -346,19 +307,16 @@ export async function getMarketBySlug(slug: string): Promise<MarketDetail | null
       "FROM markets m",
       `, (SELECT COALESCE(SUM(quote_volume),0)::text FROM activity WHERE market_id = m.id AND type IN ('buy','sell')) AS volume_all
        FROM markets m`,
-    )} WHERE b.slug = lower($1)`,
+    )} WHERE p.slug = lower($1)`,
     [slug],
   );
   if (!r) return null;
   return {
     ...toSummary(r),
-    businessId: r.business_id,
-    source: r.source,
+    placeId: r.place_id,
     sourceId: r.source_id,
-    address: r.address,
-    website: r.website,
+    bbox: bboxOf(r),
     hidden: r.hidden,
-    claimedWallet: r.claimed_wallet,
     feeRecipient: r.fee_recipient,
     description: r.description,
     metaCid: r.meta_cid,
@@ -393,14 +351,14 @@ export async function listRecentTrades(limit: number): Promise<RecentTrade[]> {
   const rows = await query<{
     type: "launch" | "buy" | "sell"; venue: "curve" | "dex"; wallet: string | null; tx_hash: string;
     amount_in: string | null; amount_out: string | null; quote_volume: string | null; timestamp: Date;
-    slug: string; name: string; city: string | null; symbol: string; image_cid: string | null; quote_symbol: string; quote_decimals: number;
+    slug: string; name: string; region: string | null; symbol: string; image_cid: string | null; quote_symbol: string; quote_decimals: number;
   }>(
     `SELECT a.type, a.venue, a.wallet, a.tx_hash, a.amount_in::text, a.amount_out::text, a.quote_volume::text, a."timestamp",
-            b.slug, b.name, b.city, m.symbol, m.image_cid, m.quote_symbol, m.quote_decimals
+            p.slug, p.name, p.region, m.symbol, m.image_cid, m.quote_symbol, m.quote_decimals
      FROM activity a
      JOIN markets m ON m.id = a.market_id
-     JOIN businesses b ON b.id = m.business_id
-     WHERE a.type IN ('launch','buy','sell') AND b.hidden = false
+     JOIN places p ON p.id = m.place_id
+     WHERE a.type IN ('launch','buy','sell') AND p.hidden = false
      ORDER BY a."timestamp" DESC, a.log_index DESC
      LIMIT $1`,
     [limit],
@@ -414,8 +372,8 @@ export async function listRecentTrades(limit: number): Promise<RecentTrade[]> {
     quoteVolume: r.quote_volume,
     timestamp: r.timestamp.toISOString(),
     slug: r.slug,
-    businessName: r.name,
-    city: r.city,
+    placeName: r.name,
+    region: r.region,
     symbol: r.symbol,
     imageUrl: r.image_cid ? `/api/ipfs/${r.image_cid}` : null,
     quoteSymbol: r.quote_symbol,

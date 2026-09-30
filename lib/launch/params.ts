@@ -1,193 +1,187 @@
-// Pure construction of a Pons v2 launch: factory.launchToken (no initial buy, or any ERC-20 pair such
-// as a Robinhood stock token) or the atomic launch-and-buy router (ETH pair with an initial buy). Field order follows TokenParams in
-// PonsV2LaunchFactory (github.com/ponsdotdev/pons-labs) as verified on chain 4663.
+// Pure construction of Portal.newTokenV6(NewTokenV6Params) arguments.
+// Field order and semantics follow contracts-reference/IPortal.sol (NewTokenV6Params).
 
 import {
-  NATIVE_PAIR,
-  PONS_FACTORY,
-  PONS_LAUNCH_CONFIG_ID,
-  PONS_LAUNCH_ROUTER,
-  PONS_METADATA_LIMITS,
+  LAUNCH_DEFAULTS,
+  STANDARD_TOKEN_IMPL,
+  TAX_TOKEN_ERC20_QUOTE_EXTRA_VALUE,
+  TAX_TOKEN_V3_IMPL,
+  TokenVersion,
+  VANITY_SUFFIX_STANDARD,
+  VANITY_SUFFIX_TAX,
   ZERO_ADDRESS,
+  ZERO_BYTES32,
   type Address,
   type Hex,
 } from "../contracts/constants.ts";
 import { ValidationError, isHexAddress, normalizeSymbol, normalizeTokenName } from "../validation/normalize.ts";
-import { buyMinTokensOut, quoteOpeningBuy } from "../market/curve-math.ts";
 
-/** mapin product cap for the owner fee (the protocol's own cap is read live and may be lower). */
-export const MAX_CREATOR_FEE_BPS = 1_000; // 10 %
-/** Slippage on the atomic opening buy (it executes in the launch transaction, so the curve is fresh). */
-export const OPENING_BUY_SLIPPAGE_BPS = 500;
+export const MAX_TAX_BPS = 1_000; // mapin product cap: 10 %
+export const DAY = 86_400n;
+export const MIN_TAX_DURATION = 30n * DAY;
+export const MAX_TAX_DURATION = 100n * 365n * DAY; // protocol maximum per IPortal.sol
+export const MIN_ANTI_FARMER = 60n * 60n; // 1 hour
+export const MAX_ANTI_FARMER = 365n * DAY; // protocol maximum per IPortal.sol
 
-export interface TokenParams {
-  name: string;
-  symbol: string;
-  logo: string;
-  description: string;
-  socials: { twitter: string; telegram: string; discord: string; website: string; farcaster: string };
-  creatorFeeRecipient: Address;
-  creatorTaxBps: number;
-  buybackEnabled: boolean;
-  expectedEconomics: Hex;
-  salt: Hex;
-}
-
-export interface LaunchTermsInput {
-  launchFee: bigint;
-  maxCreatorTaxBps: bigint;
-  supply: bigint;
-  curveFeeBps: bigint;
-  phantomQuote: bigint;
-  graduationThreshold: bigint;
-  expectedEconomics: Hex;
-  /** factory.launchForwarder() read live */
-  launchForwarder: Address;
-  /** pair asset these terms were read for (zero address = native ETH) */
-  pairToken: Address;
-  /** factory.approvedPairTokens(pairToken) (always true for ETH) */
-  pairApproved: boolean;
+export interface TaxConfig {
+  buyBps: number;
+  sellBps: number;
+  durationSeconds: bigint;
+  antiFarmerSeconds: bigint;
+  /** share of collected tax routed to the creator wallet (beneficiary) */
+  marketBps: number;
+  /** share burned */
+  deflationBps: number;
+  /** share added to liquidity */
+  lpBps: number;
 }
 
 export interface LaunchConfig {
   name: string;
   symbol: string;
-  logoUrl: string;
-  description: string;
-  website: string;
-  twitter: string;
-  telegram: string;
-  creator: Address;
-  /** Pons creatorFeeRecipient: on mapin always the owner escrow (the launcher is not paid the fee) */
-  feeRecipient: Address;
-  creatorFeeBps: number;
-  /** opening buy in the pair asset's raw units (0 = none) */
-  initialBuy: bigint;
+  metaCid: string;
   salt: Hex;
-  terms: LaunchTermsInput;
+  quoteToken: Address; // ZERO_ADDRESS = native BNB
+  initialBuy: bigint; // raw quote units
+  creator: Address;
+  tax: TaxConfig | null;
 }
 
-/**
- * Opening buy for an ERC-20 pair (stock token / USDG): sent right after the launch as a normal curve
- * buy (ERC-20 approve to the new curve, then curve.buy). The creator is exempt from the snipe tax.
- */
-export interface FollowUpBuy {
-  amount: bigint;
-  expectedTokens: bigint;
-  minTokensOut: bigint;
+/** Shape viem expects for the tuple (uint8/uint16 → number, uint64/uint256 → bigint). */
+export interface NewTokenV6Args {
+  name: string;
+  symbol: string;
+  meta: string;
+  dexThresh: number;
+  salt: Hex;
+  migratorType: number;
+  quoteToken: Address;
+  quoteAmt: bigint;
+  beneficiary: Address;
+  permitData: Hex;
+  extensionID: Hex;
+  extensionData: Hex;
+  dexId: number;
+  lpFeeProfile: number;
+  buyTaxRate: number;
+  sellTaxRate: number;
+  taxDuration: bigint;
+  antiFarmerDuration: bigint;
+  mktBps: number;
+  deflationBps: number;
+  dividendBps: number;
+  lpBps: number;
+  minimumShareBalance: bigint;
+  dividendToken: Address;
+  commissionReceiver: Address;
+  tokenVersion: number;
 }
 
-export type LaunchPlan =
-  | {
-      route: "factory";
-      to: Address;
-      params: TokenParams;
-      /** launchToken(params, configId, pairToken, exemptions) */
-      args: readonly [TokenParams, bigint, Address, readonly Address[]];
-      value: bigint;
-      expectedTokens: null;
-      followUpBuy: FollowUpBuy | null;
-    }
-  | {
-      route: "router";
-      to: Address;
-      params: TokenParams;
-      /** launchAndBuy(params, configId, pairToken, quoteIn, minTokensOut, recipient, exemptions) */
-      args: readonly [TokenParams, bigint, Address, bigint, bigint, Address, readonly Address[]];
-      value: bigint;
-      expectedTokens: bigint;
-      followUpBuy: null;
-    };
-
-const byteLen = (s: string) => new TextEncoder().encode(s).length;
-
-function checkLen(field: string, value: string, limit: number) {
-  if (byteLen(value) > limit) throw new ValidationError(`${field} is too long (max ${limit} bytes)`);
+export interface LaunchPlan {
+  args: NewTokenV6Args;
+  /** msg.value to send with newTokenV6 */
+  value: bigint;
+  /** ERC-20 quote amount Portal must be approved to pull (0 for native) */
+  erc20Approval: bigint;
+  tokenVersion: number;
+  tokenImpl: Address;
+  vanitySuffix: string;
+  isTax: boolean;
 }
 
-export function validateCreatorFee(bps: number, protocolMax: bigint): void {
-  if (!Number.isInteger(bps) || bps < 0) throw new ValidationError("Creator fee must be whole basis points");
-  if (bps > MAX_CREATOR_FEE_BPS) throw new ValidationError(`Creator fee is capped at ${MAX_CREATOR_FEE_BPS / 100}%`);
-  if (BigInt(bps) > protocolMax) throw new ValidationError(`Creator fee is capped at ${Number(protocolMax) / 100}% by the protocol`);
+const CID_RE = /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{20,})$/;
+
+export function isNative(quoteToken: string): boolean {
+  return quoteToken.toLowerCase() === ZERO_ADDRESS;
+}
+
+export function validateTaxConfig(tax: TaxConfig): void {
+  const ints = [tax.buyBps, tax.sellBps, tax.marketBps, tax.deflationBps, tax.lpBps];
+  if (!ints.every((n) => Number.isInteger(n) && n >= 0)) throw new ValidationError("Tax values must be whole basis points");
+  if (tax.buyBps > MAX_TAX_BPS || tax.sellBps > MAX_TAX_BPS) {
+    throw new ValidationError(`Buy and sell tax are capped at ${MAX_TAX_BPS / 100}%`);
+  }
+  if (tax.buyBps === 0 && tax.sellBps === 0) throw new ValidationError("A tax market needs a buy or sell tax above 0%");
+  if (tax.marketBps + tax.deflationBps + tax.lpBps !== 10_000) {
+    throw new ValidationError("Tax revenue split must add up to 100%");
+  }
+  if (tax.durationSeconds < MIN_TAX_DURATION || tax.durationSeconds > MAX_TAX_DURATION) {
+    throw new ValidationError("Tax duration must be between 30 days and 100 years");
+  }
+  if (tax.antiFarmerSeconds < MIN_ANTI_FARMER || tax.antiFarmerSeconds > MAX_ANTI_FARMER) {
+    throw new ValidationError("Anti-farming window must be between 1 hour and 365 days");
+  }
 }
 
 export function buildLaunchPlan(cfg: LaunchConfig): LaunchPlan {
   const name = normalizeTokenName(cfg.name);
   const symbol = normalizeSymbol(cfg.symbol);
+  if (!CID_RE.test(cfg.metaCid)) throw new ValidationError("Metadata identifier is not a valid IPFS CID");
   if (!/^0x[0-9a-fA-F]{64}$/.test(cfg.salt)) throw new ValidationError("Salt must be 32 bytes");
-  if (!/^0x[0-9a-fA-F]{64}$/.test(cfg.terms.expectedEconomics) || /^0x0{64}$/.test(cfg.terms.expectedEconomics)) {
-    throw new ValidationError("Launch economics could not be read from the chain. Retry.");
-  }
+  if (!isHexAddress(cfg.quoteToken)) throw new ValidationError("Invalid pair asset");
   if (!isHexAddress(cfg.creator) || cfg.creator.toLowerCase() === ZERO_ADDRESS) throw new ValidationError("Invalid creator wallet");
-  if (!isHexAddress(cfg.feeRecipient) || cfg.feeRecipient.toLowerCase() === ZERO_ADDRESS) throw new ValidationError("Owner escrow address is not configured");
   if (cfg.initialBuy < 0n) throw new ValidationError("Initial buy cannot be negative");
-  if (!/^https?:\/\//.test(cfg.logoUrl)) throw new ValidationError("Logo URL must be an http(s) URL");
-  validateCreatorFee(cfg.creatorFeeBps, cfg.terms.maxCreatorTaxBps);
-  const pairToken = cfg.terms.pairToken;
-  const native = pairToken.toLowerCase() === NATIVE_PAIR;
-  if (!native && !cfg.terms.pairApproved) throw new ValidationError("This pair asset is not accepted by the launch contract right now.");
 
-  const L = PONS_METADATA_LIMITS;
-  checkLen("Token name", name, L.name);
-  checkLen("Ticker", symbol, L.symbol);
-  checkLen("Logo URL", cfg.logoUrl, L.logo);
-  checkLen("Description", cfg.description, L.description);
-  checkLen("Website", cfg.website, L.social);
-  checkLen("X / Twitter", cfg.twitter, L.social);
-  checkLen("Telegram", cfg.telegram, L.social);
+  const native = isNative(cfg.quoteToken);
+  const isTax = cfg.tax !== null;
+  if (cfg.tax) validateTaxConfig(cfg.tax);
 
-  const params: TokenParams = {
+  const tokenVersion = isTax ? TokenVersion.TOKEN_TAXED_V3 : TokenVersion.TOKEN_V2_PERMIT;
+
+  const args: NewTokenV6Args = {
     name,
     symbol,
-    logo: cfg.logoUrl,
-    description: cfg.description,
-    socials: { twitter: cfg.twitter, telegram: cfg.telegram, discord: "", website: cfg.website, farcaster: "" },
-    creatorFeeRecipient: cfg.feeRecipient,
-    creatorTaxBps: cfg.creatorFeeBps,
-    buybackEnabled: false,
-    expectedEconomics: cfg.terms.expectedEconomics,
+    meta: cfg.metaCid,
+    dexThresh: LAUNCH_DEFAULTS.dexThresh,
     salt: cfg.salt,
+    migratorType: LAUNCH_DEFAULTS.migratorType,
+    quoteToken: cfg.quoteToken,
+    quoteAmt: cfg.initialBuy,
+    beneficiary: cfg.creator,
+    permitData: "0x",
+    extensionID: ZERO_BYTES32,
+    extensionData: "0x",
+    dexId: LAUNCH_DEFAULTS.dexId,
+    lpFeeProfile: LAUNCH_DEFAULTS.lpFeeProfile,
+    buyTaxRate: cfg.tax?.buyBps ?? 0,
+    sellTaxRate: cfg.tax?.sellBps ?? 0,
+    taxDuration: cfg.tax?.durationSeconds ?? 0n,
+    antiFarmerDuration: cfg.tax?.antiFarmerSeconds ?? 0n,
+    mktBps: cfg.tax?.marketBps ?? 0,
+    deflationBps: cfg.tax?.deflationBps ?? 0,
+    dividendBps: 0,
+    lpBps: cfg.tax?.lpBps ?? 0,
+    minimumShareBalance: 0n,
+    // address(0) = native dividend, only valid with a native quote; with an ERC-20 quote the
+    // quote token itself is the explicitly-allowed choice. dividendBps is 0 either way.
+    dividendToken: native || !isTax ? ZERO_ADDRESS : cfg.quoteToken,
+    commissionReceiver: ZERO_ADDRESS, // MUST be zero for non-tax tokens; unused for tax tokens
+    tokenVersion,
   };
 
-  const opening = () => {
-    const q = quoteOpeningBuy(
-      { supply: cfg.terms.supply, curveFeeBps: cfg.terms.curveFeeBps, phantomQuote: cfg.terms.phantomQuote, graduationThreshold: cfg.terms.graduationThreshold },
-      BigInt(cfg.creatorFeeBps),
-      cfg.initialBuy,
-    );
-    return { expectedTokens: q.tokensOut, minTokensOut: buyMinTokensOut(q, OPENING_BUY_SLIPPAGE_BPS) };
-  };
-
-  if (cfg.initialBuy === 0n || !native) {
-    return {
-      route: "factory",
-      to: PONS_FACTORY,
-      params,
-      args: [params, PONS_LAUNCH_CONFIG_ID, pairToken, []],
-      value: cfg.terms.launchFee, // the factory requires msg.value == launchFee exactly (paid in ETH for every pair)
-      expectedTokens: null,
-      followUpBuy: cfg.initialBuy > 0n ? { amount: cfg.initialBuy, ...opening() } : null,
-    };
+  let value = 0n;
+  let erc20Approval = 0n;
+  if (native) {
+    value = cfg.initialBuy; // msg.value must equal quoteAmt
+  } else {
+    erc20Approval = cfg.initialBuy;
+    if (isTax) value = TAX_TOKEN_ERC20_QUOTE_EXTRA_VALUE;
   }
 
-  // The router is owner-rotatable on the factory: never send value to an address we did not pin.
-  if (cfg.terms.launchForwarder.toLowerCase() !== PONS_LAUNCH_ROUTER.toLowerCase()) {
-    throw new ValidationError("The launch router changed on-chain and has not been verified by mapin. Launch without an initial buy, or try again later.");
-  }
-  const o = opening();
   return {
-    route: "router",
-    to: PONS_LAUNCH_ROUTER,
-    params,
-    args: [params, PONS_LAUNCH_CONFIG_ID, NATIVE_PAIR, cfg.initialBuy, o.minTokensOut, cfg.creator, []],
-    value: cfg.terms.launchFee + cfg.initialBuy,
-    expectedTokens: o.expectedTokens,
-    followUpBuy: null,
+    args,
+    value,
+    erc20Approval,
+    tokenVersion,
+    tokenImpl: isTax ? TAX_TOKEN_V3_IMPL : STANDARD_TOKEN_IMPL,
+    vanitySuffix: isTax ? VANITY_SUFFIX_TAX : VANITY_SUFFIX_STANDARD,
+    isTax,
   };
 }
 
-/** Random 32-byte CREATE2 salt (a fresh salt per attempt, so a retried launch never collides). */
-export function randomSalt(): Hex {
-  const b = crypto.getRandomValues(new Uint8Array(32));
-  return ("0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("")) as Hex;
+/** Which clone implementation / suffix a launch needs, before the salt is known. */
+export function vanityTargetFor(isTax: boolean): { tokenImpl: Address; suffix: string } {
+  return isTax
+    ? { tokenImpl: TAX_TOKEN_V3_IMPL, suffix: VANITY_SUFFIX_TAX }
+    : { tokenImpl: STANDARD_TOKEN_IMPL, suffix: VANITY_SUFFIX_STANDARD };
 }

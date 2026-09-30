@@ -6,7 +6,7 @@ import type { Address, PublicClient } from "viem";
 import { readLensState, verifyDexPool, type VerifiedPool } from "@/lib/market/onchain";
 import { erc20Abi } from "@/lib/contracts/erc20-abi";
 import { phaseFromStatus, resolveTradeRoute, type LensState, type TradeRoute } from "@/lib/market/state";
-import { CHAIN_ID } from "@/lib/contracts/constants";
+import { BSC_CHAIN_ID } from "@/lib/contracts/constants";
 
 export interface MarketChainState {
   lens: LensState;
@@ -16,13 +16,13 @@ export interface MarketChainState {
   phase: ReturnType<typeof phaseFromStatus>;
 }
 
-/** Live market state straight from Robinhood Chain (never from a cache or mock). */
+/** Live market state straight from BNB Chain (never from a cache or mock). */
 export function useMarketChain(token: Address) {
-  const client = usePublicClient({ chainId: CHAIN_ID }) as unknown as PublicClient | undefined;
+  const client = usePublicClient({ chainId: BSC_CHAIN_ID }) as unknown as PublicClient | undefined;
   return useQuery({
     queryKey: ["market-chain", token],
     enabled: Boolean(client),
-    refetchInterval: 8_000,
+    refetchInterval: 12_000,
     queryFn: async (): Promise<MarketChainState> => {
       const pc = client!;
       const [lens, totalSupply] = await Promise.all([
@@ -30,8 +30,8 @@ export function useMarketChain(token: Address) {
         pc.readContract({ address: token, abi: erc20Abi, functionName: "totalSupply" }),
       ]);
       const phase = phaseFromStatus(lens.status);
-      const pool = phase === "graduated" ? await verifyDexPool(pc, token) : null;
-      return { lens, totalSupply, pool, route: resolveTradeRoute(lens, pool), phase };
+      const pool = phase === "graduated" ? await verifyDexPool(pc, token, lens) : null;
+      return { lens, totalSupply, pool, route: resolveTradeRoute(lens, pool?.pool ?? null), phase };
     },
   });
 }

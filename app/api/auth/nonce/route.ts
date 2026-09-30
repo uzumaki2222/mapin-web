@@ -5,7 +5,7 @@ import { query } from "@/lib/database/pool";
 import { handle } from "@/lib/errors/api";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
 import { appOrigin } from "@/lib/config/server";
-import { CHAIN_ID } from "@/lib/contracts/constants";
+import { BSC_CHAIN_ID } from "@/lib/contracts/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,6 @@ export async function GET(req: Request) {
       [nonce, session.id, NONCE_TTL_SECONDS],
     );
     const origin = appOrigin();
-    return NextResponse.json({ nonce, domain: origin.host, uri: origin.origin, chainId: CHAIN_ID, ttlSeconds: NONCE_TTL_SECONDS });
+    return NextResponse.json({ nonce, domain: origin.host, uri: origin.origin, chainId: BSC_CHAIN_ID, ttlSeconds: NONCE_TTL_SECONDS });
   });
 }

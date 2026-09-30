@@ -2,37 +2,36 @@
 
 export type MarketStatus = "bonding" | "graduated";
 
-/** A real-world place on the map (tokenized or not). */
-export interface Business {
+/** [west, south, east, north] */
+export type BBox = [number, number, number, number];
+
+/** An area on the map: country, state, city, town, village, neighbourhood … (tokenized or not). */
+export interface Place {
   id: string;
-  source: "osm" | "user";
-  sourceId: string;
+  sourceId: string; // OpenStreetMap element, e.g. relation/175905
   slug: string;
   name: string;
-  category: string | null;
-  address: string | null;
-  city: string | null;
+  placeType: string | null;
+  region: string | null;
   country: string | null;
   countryCode: string | null;
-  website: string | null;
   lat: number;
   lng: number;
-  claimed: boolean;
+  bbox: BBox | null;
   hidden: boolean;
-  /** set when the business already has a market */
+  /** set when the place already has a market */
   market: { symbol: string; tokenAddress: string; imageUrl: string | null } | null;
 }
 
-/** Lightweight pin for the map layer of tokenized businesses. */
+/** Lightweight pin for the map layer of tokenized places. */
 export interface MapPin {
   slug: string;
   name: string;
   symbol: string;
-  category: string | null;
+  placeType: string | null;
   lat: number;
   lng: number;
   imageUrl: string | null;
-  claimed: boolean;
   volume24h: string;
   quoteSymbol: string;
   quoteDecimals: number;
@@ -41,13 +40,12 @@ export interface MapPin {
 export interface MarketSummary {
   id: string;
   slug: string;
-  businessName: string;
-  category: string | null;
-  city: string | null;
+  placeName: string;
+  placeType: string | null;
+  region: string | null;
   country: string | null;
   lat: number;
   lng: number;
-  claimed: boolean;
   projectName: string;
   tokenName: string;
   symbol: string;
@@ -70,13 +68,10 @@ export interface MarketSummary {
 }
 
 export interface MarketDetail extends MarketSummary {
-  businessId: string;
-  source: "osm" | "user";
+  placeId: string;
   sourceId: string;
-  address: string | null;
-  website: string | null;
+  bbox: BBox | null;
   hidden: boolean;
-  claimedWallet: string | null;
   feeRecipient: string;
   description: string | null;
   metaCid: string;
@@ -101,7 +96,7 @@ export interface ActivityItem {
 }
 
 export interface SessionInfo {
-  configured: { database: boolean; sessions: boolean; admin: boolean; escrow: boolean; metadata: boolean; indexer: boolean };
+  configured: { database: boolean; sessions: boolean; admin: boolean; metadata: boolean; indexer: boolean };
   wallet: string | null;
 }
 
@@ -119,27 +114,25 @@ export interface RecentTrade {
   quoteVolume: string | null; // raw quote units
   timestamp: string;
   slug: string;
-  businessName: string;
-  city: string | null;
+  placeName: string;
+  region: string | null;
   symbol: string;
   imageUrl: string | null;
   quoteSymbol: string;
   quoteDecimals: number;
 }
 
-/** A place found by search or by clicking the map (not yet stored). */
+/** A place found by search or on the map (not yet stored). */
 export interface PlaceCandidate {
-  source: "osm";
   sourceId: string; // node/123 | way/456 | relation/789
   name: string;
-  category: string | null;
-  address: string | null;
-  city: string | null;
+  placeType: string | null;
+  region: string | null;
   country: string | null;
   countryCode: string | null;
-  website: string | null;
   lat: number;
   lng: number;
+  bbox: BBox | null;
 }
 
 export interface SearchResult {
@@ -147,17 +140,9 @@ export interface SearchResult {
   sublabel: string;
   lat: number;
   lng: number;
-  /** bounding box [west, south, east, north] when the result is an area (city, country) */
-  bbox: [number, number, number, number] | null;
-  /** set when the result is a business/POI */
+  bbox: BBox | null;
   place: PlaceCandidate | null;
 }
 
-export interface ClaimInfo {
-  id: string;
-  domain: string;
-  domainMatches: boolean;
-  txtName: string;
-  txtValue: string;
-  status: "pending" | "dns_verified" | "approved" | "rejected";
-}
+/** Zoom level of the area picked at a map point (Nominatim reverse "zoom"). */
+export type AreaLevel = "country" | "state" | "county" | "city" | "town" | "suburb" | "neighbourhood";

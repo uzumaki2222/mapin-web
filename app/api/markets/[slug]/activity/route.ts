@@ -14,9 +14,9 @@ const qp = z.object({
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   return handle("markets/activity", async () => {
     const slug = decodeURIComponent((await params).slug).toLowerCase();
-    if (!isValidSlug(slug)) throw notFound("No market exists for this business.");
+    if (!isValidSlug(slug)) throw notFound("No market exists for this place.");
     const market = await getMarketBySlug(slug);
-    if (!market) throw notFound("No market exists for this business.");
+    if (!market) throw notFound("No market exists for this place.");
     const p = qp.parse(Object.fromEntries(new URL(req.url).searchParams.entries()));
     const items = await listActivity(market.id, p.limit, p.before ? new Date(p.before) : undefined);
     return NextResponse.json({ items }, { headers: { "Cache-Control": "public, max-age=5" } });

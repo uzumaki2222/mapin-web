@@ -2,7 +2,7 @@
   "name": "mapin",
   "version": "0.1.0",
   "private": true,
-  "description": "mapin \u2014 tokenize any business on the world map, on Robinhood Chain (Pons v2).",
+  "description": "mapin \u2014 a token launchpad on a world map: tokenize any place on BNB Smart Chain (Flap).",
   "engines": {
     "node": ">=22.18.0"
   },
@@ -17,7 +17,9 @@
     "test:e2e": "playwright test",
     "db:migrate": "node --import tsx scripts/migrate.ts",
     "indexer": "node --conditions=react-server --import tsx scripts/indexer.ts",
-    "indexer:once": "node --conditions=react-server --import tsx scripts/indexer.ts --once"
+    "indexer:once": "node --conditions=react-server --import tsx scripts/indexer.ts --once",
+    "gen:abi": "python scripts/gen-portal-abi.py",
+    "test:abi-offline": "node scripts/verify-abi-offline.mjs"
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.45.0",

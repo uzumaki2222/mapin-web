@@ -10,14 +10,14 @@ import { CopyButton } from "@/components/ui/CopyButton";
 import { Notice } from "@/components/ui/Notice";
 import { TradePanel } from "@/components/trading/TradePanel";
 import { ActivityTable } from "@/components/market/ActivityTable";
+import { MiniMap } from "@/components/map/MiniMap";
+import { ReportLink } from "@/components/market/ReportLink";
 import { explorerAddress, explorerTx, explorerToken } from "@/lib/config/public";
-import { fmtDate, fmtPrice, fmtProgress, fmtQuote, fmtWad, safeHttpUrl, timeAgo } from "@/lib/format";
-import { formatAmount, formatCompact, shortenAddress } from "@/lib/validation/normalize";
+import { fmtDate, fmtPrice, fmtProgress, fmtQuote, fmtWad, timeAgo } from "@/lib/format";
+import { formatCompact, shortenAddress } from "@/lib/validation/normalize";
 import { marketCapWad } from "@/lib/market/math";
 import { progressPercent } from "@/lib/market/state";
 import { decodeError } from "@/lib/errors/decode";
-import { MiniMap } from "@/components/map/MiniMap";
-import { OwnerCard } from "@/components/market/OwnerCard";
 
 const TABS = ["Overview", "Place", "Activity", "Market"] as const;
 type Tab = (typeof TABS)[number];
@@ -32,8 +32,8 @@ export function MarketView({ m }: { m: MarketDetail }) {
   const priceWad = live ? live.lens.price : m.priceWad ? BigInt(m.priceWad) : null;
   const mcap = live ? marketCapWad(live.lens.price, live.totalSupply) : m.marketCapWad ? BigInt(m.marketCapWad) : null;
   const graduated = live ? live.phase === "graduated" : m.status === "graduated";
-  const graduating = live?.phase === "staged";
   const progress = live ? progressPercent(live.lens.progress) : fmtProgress(m.progressWad);
+  const feeText = m.buyTaxBps || m.sellTaxBps ? `Buy ${m.buyTaxBps / 100}% · Sell ${m.sellTaxBps / 100}%` : "None";
 
   return (
     <div className="container section">
@@ -41,16 +41,13 @@ export function MarketView({ m }: { m: MarketDetail }) {
         <TokenLogo src={m.imageUrl} symbol={m.symbol} large />
         <div className="grow" style={{ minWidth: 0 }}>
           <div className="row">
-            <h1 style={{ margin: 0, fontSize: "2rem" }}>{m.businessName}</h1>
+            <h1 style={{ margin: 0, fontSize: "2rem" }}>{m.placeName}</h1>
             <span className="badge badge-black">${m.symbol}</span>
-            <span className={`badge ${graduated ? "badge-green" : "badge-yellow"}`}>{graduated ? "Graduated" : graduating ? "Graduating" : `Bonding ${progress !== null ? progress.toFixed(1) + "%" : ""}`}</span>
+            <span className={`badge ${graduated ? "badge-green" : "badge-yellow"}`}>{graduated ? "Graduated" : `Bonding ${progress !== null ? progress.toFixed(1) + "%" : ""}`}</span>
           </div>
           <div className="small" style={{ marginTop: 6 }}>
-            <span>{[m.category, m.address, m.city, m.country].filter(Boolean).join(" · ")}</span>
-          </div>
-          <div className="row" style={{ gap: 6, marginTop: 6 }}>
-            <span className={`badge ${m.claimed ? "badge-green" : ""}`}>{m.claimed ? "✓ Claimed by the owner" : "Unofficial · not affiliated with the business"}</span>
-            <span className="small muted">tokenized {fmtDate(m.createdAt)}</span>
+            {[m.placeType, m.region].filter(Boolean).join(" · ")}
+            <span className="muted"> · launched {fmtDate(m.createdAt)}</span>
           </div>
           <div className="row small mono" style={{ marginTop: 8, gap: 8 }}>
             <span className="muted">CA</span>
@@ -82,11 +79,11 @@ export function MarketView({ m }: { m: MarketDetail }) {
                 <div className="stack">
                   <p style={{ whiteSpace: "pre-wrap" }}>{m.description ?? "No description."}</p>
                   <dl className="review">
-                    <dt>Business</dt><dd>{m.businessName}</dd>
+                    <dt>Place</dt><dd>{m.placeName}</dd>
                     <dt>Token</dt><dd>{m.tokenName} (${m.symbol})</dd>
-                    <dt>Tokenized by</dt><dd><a href={explorerAddress(m.creatorWallet)} target="_blank" rel="noopener noreferrer">{m.creatorWallet}</a></dd>
+                    <dt>Creator</dt><dd><a href={explorerAddress(m.creatorWallet)} target="_blank" rel="noopener noreferrer">{m.creatorWallet}</a></dd>
                     <dt>Pair</dt><dd>{m.symbol}/{m.quoteSymbol}</dd>
-                    <dt>Owner share</dt><dd>{m.buyTaxBps ? `${m.buyTaxBps / 100}% of every trade` : "None"} → {m.claimed ? "the verified owner" : "held in escrow until the owner claims"}</dd>
+                    <dt>Creator fees</dt><dd>{feeText}</dd>
                     <dt>Launch date</dt><dd>{fmtDate(m.createdAt)}</dd>
                     <dt>Launch tx</dt><dd><a href={explorerTx(m.launchTx)} target="_blank" rel="noopener noreferrer">{shortenAddress(m.launchTx, 8)}</a></dd>
                   </dl>
@@ -94,22 +91,18 @@ export function MarketView({ m }: { m: MarketDetail }) {
               ) : null}
               {tab === "Place" ? (
                 <div className="stack">
-                  <MiniMap lat={m.lat} lng={m.lng} label={m.businessName} />
+                  <MiniMap lat={m.lat} lng={m.lng} bbox={m.bbox} placeId={m.placeId} label={m.placeName} />
                   <dl className="review">
-                    <dt>Address</dt><dd>{[m.address, m.city, m.country].filter(Boolean).join(", ") || "—"}</dd>
-                    <dt>Category</dt><dd>{m.category ?? "—"}</dd>
-                    <dt>Coordinates</dt><dd className="mono">{m.lat.toFixed(5)}, {m.lng.toFixed(5)}</dd>
-                    {safeHttpUrl(m.website) ? (<><dt>Website</dt><dd><a href={safeHttpUrl(m.website)!} target="_blank" rel="noopener noreferrer nofollow">{m.website}</a></dd></>) : null}
+                    <dt>Name</dt><dd>{m.placeName}</dd>
+                    <dt>Type</dt><dd>{m.placeType ?? "Area"}</dd>
+                    <dt>Part of</dt><dd>{m.region ?? "—"}</dd>
+                    <dt>Center</dt><dd className="mono">{m.lat.toFixed(4)}, {m.lng.toFixed(4)}</dd>
                     <dt>Map data</dt>
-                    <dd>
-                      {m.source === "osm" ? (
-                        <a href={`https://www.openstreetmap.org/${m.sourceId}`} target="_blank" rel="noopener noreferrer">OpenStreetMap {m.sourceId} ↗</a>
-                      ) : "Added to the map by the community"}
-                    </dd>
+                    <dd><a href={`https://www.openstreetmap.org/${m.sourceId}`} target="_blank" rel="noopener noreferrer">OpenStreetMap {m.sourceId} ↗</a></dd>
                   </dl>
                   <div className="row">
-                    <a className="btn" href={`https://www.google.com/maps/search/?api=1&query=${m.lat},${m.lng}`} target="_blank" rel="noopener noreferrer">Directions ↗</a>
-                    <a className="btn" href={`/?place=${m.businessId}`}>Show on the mapin map</a>
+                    <a className="btn" href={`/app?place=${m.placeId}`}>Show on the mapin map</a>
+                    <ReportLink placeId={m.placeId} />
                   </div>
                 </div>
               ) : null}
@@ -125,13 +118,12 @@ export function MarketView({ m }: { m: MarketDetail }) {
                   <dt>Curve reserve</dt><dd>{live ? fmtQuote(live.lens.reserve, m.quoteDecimals, m.quoteSymbol) : "—"}</dd>
                   <dt>Circulating supply</dt><dd>{live ? `${formatCompact(live.lens.circulatingSupply, 18)} ${m.symbol}` : "—"}</dd>
                   <dt>Total supply</dt><dd>{live ? `${formatCompact(live.totalSupply, 18)} ${m.symbol}` : "—"}</dd>
-                  <dt>Graduation at</dt><dd>{live ? `${formatAmount(live.lens.graduationThreshold, m.quoteDecimals, 4)} ${m.quoteSymbol} raised` : "—"}</dd>
-                  <dt>Bonding curve</dt><dd>{live?.lens.curve ? <a href={explorerAddress(live.lens.curve)} target="_blank" rel="noopener noreferrer">{live.lens.curve}</a> : "—"}</dd>
+                  <dt>Graduation at</dt><dd>{live ? `${formatCompact(live.lens.dexSupplyThresh, 18)} ${m.symbol} circulating` : "—"}</dd>
                   <dt>DEX pool</dt>
                   <dd>
                     {live?.pool ? (
-                      <><span className="mono break">{live.pool.poolId}</span> · verified Uniswap v4 pool (liquidity locked)</>
-                    ) : graduated ? "Pool not verified yet" : "Created at graduation (Uniswap v4)"}
+                      <><a href={explorerAddress(live.pool.pool)} target="_blank" rel="noopener noreferrer">{live.pool.pool}</a> · verified PancakeSwap v2 pair</>
+                    ) : graduated ? "Pool not verified yet" : "Created at graduation"}
                   </dd>
                   <dt>All-time volume</dt><dd>{fmtQuote(m.volumeAll, m.quoteDecimals, m.quoteSymbol)}</dd>
                 </dl>
@@ -139,16 +131,13 @@ export function MarketView({ m }: { m: MarketDetail }) {
             </div>
           </div>
         </div>
-        <div className="stack" style={{ gap: 20 }}>
-          <TradePanel
-            token={token}
-            symbol={m.symbol}
-            quote={{ address: m.quoteToken as Address, symbol: m.quoteSymbol, decimals: m.quoteDecimals }}
-            chain={live}
-            chainError={chainError}
-          />
-          <OwnerCard m={m} />
-        </div>
+        <TradePanel
+          token={token}
+          symbol={m.symbol}
+          quote={{ address: m.quoteToken as Address, symbol: m.quoteSymbol, decimals: m.quoteDecimals }}
+          chain={live}
+          chainError={chainError}
+        />
       </div>
     </div>
   );

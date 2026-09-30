@@ -4,7 +4,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MlMap, MapMouseEvent, Marker } from "maplibre-gl";
 import type { MapPin } from "@/lib/market/types";
-import { MAP_COLORS, MAP_FONT, MAP_STYLE_URL, applyParchment, featureName, poiLayerIds } from "@/components/map/style";
+import { MAP_COLORS, MAP_FONT, MAP_STYLE_URL, applyParchment } from "@/components/map/style";
+import { outlineFeature } from "@/components/map/outline";
 
 export interface WorldMapHandle {
   flyTo(lat: number, lng: number, zoom?: number): void;
@@ -14,13 +15,12 @@ export interface WorldMapHandle {
 
 export interface WorldMapProps {
   pins: MapPin[];
-  /** highlighted location (selected business or the spot being added) */
+  /** clicked point (shown as a marker while its area is looked up) */
   selected: { lat: number; lng: number } | null;
-  addMode: boolean;
+  /** border of the selected place (GeoJSON geometry) */
+  outline: unknown | null;
   onPinClick(slug: string): void;
-  onPoiClick(p: { lat: number; lng: number; label: string | null }): void;
-  onPointPick(p: { lat: number; lng: number }): void;
-  onEmptyClick(): void;
+  onMapClick(p: { lat: number; lng: number; zoom: number }): void;
   onZoom?(zoom: number): void;
 }
 
@@ -32,12 +32,12 @@ function pinsGeoJson(pins: MapPin[]) {
     features: pins.map((p) => ({
       type: "Feature" as const,
       geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
-      properties: { slug: p.slug, label: `$${p.symbol}`, name: p.name, claimed: p.claimed ? 1 : 0 },
+      properties: { slug: p.slug, label: `$${p.symbol}`, name: p.name },
     })),
   };
 }
 
-/** Worldwide street-level map (MapLibre + OpenFreeMap) with tokenized businesses as pins. */
+/** Worldwide map (MapLibre + OpenFreeMap): click anywhere to pick an area; tokenized places are pins. */
 export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function WorldMap(props, ref) {
   const box = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -53,7 +53,7 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
       mapRef.current?.flyTo({ center: [lng, lat], zoom, speed: 1.6, essential: true });
     },
     fitBounds([w, s, e, n]) {
-      mapRef.current?.fitBounds([[w, s], [e, n]], { padding: 40, maxZoom: 15, duration: 1200 });
+      mapRef.current?.fitBounds([[w, s], [e, n]], { padding: 60, maxZoom: 14, duration: 1200 });
     },
     center() {
       const m = mapRef.current;
@@ -95,6 +95,9 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
         map.on("load", () => {
           if (!map) return;
           applyParchment(map);
+          map.addSource("mapin-outline", { type: "geojson", data: outlineFeature(null) });
+          map.addLayer({ id: "outline-fill", type: "fill", source: "mapin-outline", paint: { "fill-color": MAP_COLORS.accent, "fill-opacity": 0.12 } });
+          map.addLayer({ id: "outline-line", type: "line", source: "mapin-outline", paint: { "line-color": MAP_COLORS.accent, "line-width": 2.5 } });
           map.addSource("mapin-pins", {
             type: "geojson",
             data: pinsGeoJson(propsRef.current.pins),
@@ -128,7 +131,7 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
             source: "mapin-pins",
             filter: ["!", ["has", "point_count"]],
             paint: {
-              "circle-color": ["case", ["==", ["get", "claimed"], 1], MAP_COLORS.claimed, MAP_COLORS.accent],
+              "circle-color": MAP_COLORS.accent,
               "circle-radius": ["interpolate", ["linear"], ["zoom"], 2, 6, 12, 9, 17, 12],
               "circle-stroke-color": MAP_COLORS.ink,
               "circle-stroke-width": 2.5,
@@ -153,15 +156,10 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
           setReady(true);
         });
 
-        const clickable = () => [...PIN_LAYERS, ...poiLayerIds(map!)].filter((id) => map!.getLayer(id));
         map.on("mousemove", (e: MapMouseEvent) => {
           if (!map) return;
-          if (propsRef.current.addMode) {
-            map.getCanvas().style.cursor = "crosshair";
-            return;
-          }
-          const hit = map.queryRenderedFeatures(e.point, { layers: clickable() });
-          map.getCanvas().style.cursor = hit.length ? "pointer" : "";
+          const hit = map.queryRenderedFeatures(e.point, { layers: PIN_LAYERS.filter((id) => map!.getLayer(id)) });
+          map.getCanvas().style.cursor = hit.length ? "pointer" : "crosshair";
         });
         map.on("zoomend", () => map && propsRef.current.onZoom?.(map.getZoom()));
 
@@ -172,7 +170,7 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
           const area: [[number, number], [number, number]] = [[e.point.x - pad, e.point.y - pad], [e.point.x + pad, e.point.y + pad]];
           const pinHits = map.queryRenderedFeatures(area, { layers: PIN_LAYERS.filter((id) => map!.getLayer(id)) });
           const pin = pinHits[0];
-          if (pin && !p.addMode) {
+          if (pin) {
             if (pin.properties?.cluster_id !== undefined) {
               const src = map.getSource("mapin-pins") as GeoJSONSource;
               const geom = pin.geometry as unknown as { coordinates: [number, number] };
@@ -184,19 +182,7 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
             p.onPinClick(String(pin.properties?.slug));
             return;
           }
-          if (p.addMode) {
-            p.onPointPick({ lat: e.lngLat.lat, lng: e.lngLat.lng });
-            return;
-          }
-          const poiIds = poiLayerIds(map).filter((id) => map!.getLayer(id));
-          const poi = poiIds.length ? map.queryRenderedFeatures(area, { layers: poiIds })[0] : undefined;
-          if (poi) {
-            const g = poi.geometry as unknown as { type: string; coordinates: [number, number] };
-            const [lng, lat] = g.type === "Point" ? g.coordinates : [e.lngLat.lng, e.lngLat.lat];
-            p.onPoiClick({ lat, lng, label: featureName(poi.properties as Record<string, unknown>) });
-            return;
-          }
-          p.onEmptyClick();
+          p.onMapClick({ lat: e.lngLat.lat, lng: e.lngLat.lng, zoom: map.getZoom() });
         });
         map.on("error", (ev: { error?: Error }) => {
           if (ev?.error && /style|Failed to fetch/i.test(String(ev.error.message)) && !map?.isStyleLoaded()) {
@@ -222,6 +208,13 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
     src?.setData(pinsGeoJson(props.pins));
   }, [props.pins, ready]);
 
+  // selected place border
+  useEffect(() => {
+    if (!ready) return;
+    const src = mapRef.current?.getSource("mapin-outline") as GeoJSONSource | undefined;
+    src?.setData(outlineFeature(props.outline));
+  }, [props.outline, ready]);
+
   // selection marker
   useEffect(() => {
     const map = mapRef.current;
@@ -231,13 +224,13 @@ export const WorldMap = forwardRef<WorldMapHandle, WorldMapProps>(function World
     markerRef.current = null;
     if (props.selected) {
       const el = document.createElement("div");
-      el.className = `map-select-marker${props.addMode ? " is-add" : ""}`;
+      el.className = "map-select-marker";
       markerRef.current = new lib.Marker({ element: el, anchor: "bottom" }).setLngLat([props.selected.lng, props.selected.lat]).addTo(map);
     }
-  }, [props.selected, props.addMode, ready]);
+  }, [props.selected, ready]);
 
   return (
-    <div className="world-map" data-add-mode={props.addMode || undefined}>
+    <div className="world-map">
       <div ref={box} className="world-map-canvas" aria-label="World map" role="application" />
       {failed ? <div className="world-map-error">{failed}</div> : null}
     </div>

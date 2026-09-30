@@ -2,7 +2,7 @@ export function BondingProgress({ percent, graduated }: { percent: number | null
   if (graduated) {
     return (
       <div className="stack" style={{ gap: 4 }}>
-        <div className="row between tiny mono"><span className="badge badge-green">Graduated</span><span>Uniswap v4</span></div>
+        <div className="row between tiny mono"><span className="badge badge-green">Graduated</span><span>PancakeSwap</span></div>
         <div className="progress graduated"><div style={{ width: "100%" }} /></div>
       </div>
     );

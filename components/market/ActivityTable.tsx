@@ -32,7 +32,7 @@ export function ActivityTable({ slug, symbol, quoteSymbol, quoteDecimals }: { sl
             return (
               <tr key={`${a.txHash}-${a.type}-${a.timestamp}`}>
                 <td className={a.type === "buy" ? "pos" : a.type === "sell" ? "neg" : undefined}>{a.type.toUpperCase()}</td>
-                <td>{a.venue === "curve" ? "Curve" : "Uniswap v4"}</td>
+                <td>{a.venue === "curve" ? "Curve" : "PancakeSwap"}</td>
                 <td>{a.wallet ? <a href={explorerAddress(a.wallet)} target="_blank" rel="noopener noreferrer">{shortenAddress(a.wallet)}</a> : "—"}</td>
                 <td>{quoteAmt}</td>
                 <td>{tokenRaw ? formatAmount(BigInt(tokenRaw), 18, 2) : "—"}</td>

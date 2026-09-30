@@ -47,7 +47,7 @@ function WalletOptions({ onClose }: { onClose: () => void }) {
   const fallback = useMemo(() => connectors.find((c) => c.id === "injected"), [connectors]);
 
   // Offer window.ethereum too when the wallet behind it did not announce itself over EIP-6963
-  // (older wallets / in-app mobile browsers), so an installed wallet is never missed.
+  // (older Binance Wallet / in-app mobile browsers), so an installed wallet is never missed.
   const legacyName = env.legacy ? legacyWalletName(env.legacy) : null;
   const showLegacy = Boolean(
     fallback && legacyName && !announced.some((c) => c.name.toLowerCase().includes(legacyName.split(" ")[0]!.toLowerCase())),
@@ -112,7 +112,7 @@ function WalletOptions({ onClose }: { onClose: () => void }) {
                 </a>
               ))
             : null}
-          <span className="tiny muted">Robinhood Wallet: open the app’s built-in browser, then paste this page&apos;s address.</span>
+          <span className="tiny muted">Binance Wallet: open the Binance app → Wallet → Browser, then paste this page&apos;s address.</span>
         </div>
       ) : null}
       {nothingDetected && !env.mobile ? (

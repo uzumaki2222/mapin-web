@@ -4,7 +4,7 @@ export const KNOWN_WALLETS = [
   { key: "metamask", name: "MetaMask", match: /metamask/i, installUrl: "https://metamask.io/download/" },
   { key: "rabby", name: "Rabby", match: /rabby/i, installUrl: "https://rabby.io/" },
   { key: "okx", name: "OKX Wallet", match: /okx/i, installUrl: "https://web3.okx.com/download" },
-  { key: "robinhood", name: "Robinhood Wallet", match: /robinhood/i, installUrl: "https://robinhood.com/us/en/web3-wallet/" },
+  { key: "binance", name: "Binance Wallet", match: /binance/i, installUrl: "https://www.binance.com/en/web3wallet" },
 ] as const;
 
 export interface LegacyFlags {

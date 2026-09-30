@@ -4,43 +4,47 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { useConnection } from "wagmi";
 import { api, ApiClientError } from "@/lib/client/api";
-import type { Business, MapPin, MarketDetail, SearchResult } from "@/lib/market/types";
+import type { AreaLevel, MapPin, MarketDetail, Place, SearchResult } from "@/lib/market/types";
+import { levelForMapZoom, type LevelChoice } from "@/lib/osm/parse";
 import { WorldMap, type WorldMapHandle } from "@/components/map/WorldMap";
+import { usableBBox } from "@/components/map/outline";
 import { LiveFeed } from "@/components/app/LiveFeed";
 import { TokenLogo } from "@/components/ui/TokenLogo";
 import { Notice } from "@/components/ui/Notice";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
-import { useIsSignedIn, useWalletSignIn } from "@/hooks/useSession";
-import { OWNER_FEE_BPS } from "@/lib/config/public";
-import { fmtPrice, fmtQuote, fmtWad, safeHttpUrl } from "@/lib/format";
+import { fmtPrice, fmtQuote, fmtWad } from "@/lib/format";
 import { marketPath, suggestTicker } from "@/lib/validation/normalize";
 
+type Point = { lat: number; lng: number };
+
 type Selection =
-  | { kind: "loading"; lat: number; lng: number; label: string | null }
-  | { kind: "business"; business: Business }
+  | { kind: "loading"; at: Point; label: string }
+  | { kind: "place"; at: Point | null; place: Place; levels: LevelChoice[]; level: AreaLevel | null }
   | { kind: "market"; market: MarketDetail }
-  | { kind: "error"; message: string; lat: number; lng: number }
-  | { kind: "add"; lat: number; lng: number };
+  | { kind: "empty"; at: Point; message: string };
 
-const CATEGORIES = [
-  "Restaurant", "Cafe", "Street food", "Bar", "Bakery", "Grocery", "Clothes shop", "Barber", "Salon", "Hotel", "Workshop",
-  "Pharmacy", "Gym", "Office", "Market stall", "Other",
-];
+const LEVEL_NAMES: Record<AreaLevel, string> = {
+  country: "Country",
+  state: "State / region",
+  county: "County",
+  city: "City",
+  town: "Town",
+  suburb: "Neighbourhood",
+  neighbourhood: "Neighbourhood",
+};
 
-function selectedPoint(sel: Selection | null): { lat: number; lng: number } | null {
+function markerOf(sel: Selection | null): Point | null {
   if (!sel) return null;
-  if (sel.kind === "business") return { lat: sel.business.lat, lng: sel.business.lng };
-  if (sel.kind === "market") return { lat: sel.market.lat, lng: sel.market.lng };
-  return { lat: sel.lat, lng: sel.lng };
+  if (sel.kind === "loading" || sel.kind === "empty") return sel.at;
+  if (sel.kind === "place") return sel.at ?? { lat: sel.place.lat, lng: sel.place.lng };
+  return { lat: sel.market.lat, lng: sel.market.lng };
 }
 
 export function MapHome() {
   const mapRef = useRef<WorldMapHandle>(null);
   const params = useSearchParams();
   const [sel, setSel] = useState<Selection | null>(null);
-  const [addMode, setAddMode] = useState(false);
+  const [outline, setOutline] = useState<unknown | null>(null);
   const [zoom, setZoom] = useState(1.4);
   const reqId = useRef(0);
 
@@ -50,208 +54,190 @@ export function MapHome() {
     refetchInterval: 30_000,
   });
 
-  const resolve = useCallback(async (body: unknown, at: { lat: number; lng: number; label: string | null }) => {
-    const id = ++reqId.current;
-    setSel({ kind: "loading", ...at });
+  const loadOutline = useCallback(async (placeId: string, id: number) => {
     try {
-      const b = await api<Business>("/api/businesses/resolve", { method: "POST", json: body });
-      if (id !== reqId.current) return;
-      setSel({ kind: "business", business: b });
-    } catch (err) {
-      if (id !== reqId.current) return;
-      setSel({ kind: "error", message: err instanceof ApiClientError ? err.message : "Something went wrong. Try again.", lat: at.lat, lng: at.lng });
+      const r = await api<{ geometry: unknown }>(`/api/places/${placeId}/outline`);
+      if (id === reqId.current) setOutline(r.geometry);
+    } catch {
+      /* the border is decorative */
     }
   }, []);
 
+  const showPlace = useCallback((place: Place, at: Point | null, levels: LevelChoice[], level: AreaLevel | null, id: number, fit: boolean) => {
+    setSel({ kind: "place", at, place, levels, level });
+    const bb = usableBBox(place.bbox);
+    if (fit && bb) mapRef.current?.fitBounds(bb);
+    void loadOutline(place.id, id);
+  }, [loadOutline]);
+
+  const pickAt = useCallback(async (at: Point, level: AreaLevel, fit: boolean) => {
+    const id = ++reqId.current;
+    setOutline(null);
+    setSel({ kind: "loading", at, label: `Finding the ${LEVEL_NAMES[level].toLowerCase()} here…` });
+    try {
+      const r = await api<{ place: Place | null; levels: LevelChoice[] }>("/api/places/at", { method: "POST", json: { ...at, level } });
+      if (id !== reqId.current) return;
+      if (!r.place) {
+        setSel({ kind: "empty", at, message: "There is no area to tokenize here — try clicking on land, or zoom out to pick a bigger area." });
+        return;
+      }
+      showPlace(r.place, at, r.levels, level, id, fit);
+    } catch (err) {
+      if (id === reqId.current) setSel({ kind: "empty", at, message: err instanceof ApiClientError ? err.message : "Something went wrong. Try again." });
+    }
+  }, [showPlace]);
+
   const openMarket = useCallback(async (slug: string) => {
     const id = ++reqId.current;
+    setOutline(null);
     try {
       const m = await api<MarketDetail>(`/api/markets/${encodeURIComponent(slug)}`);
       if (id !== reqId.current) return;
       setSel({ kind: "market", market: m });
-      mapRef.current?.flyTo(m.lat, m.lng, Math.max(mapRef.current.center()?.zoom ?? 0, 16));
+      const bb = usableBBox(m.bbox);
+      if (bb) mapRef.current?.fitBounds(bb);
+      else mapRef.current?.flyTo(m.lat, m.lng, 10);
+      void loadOutline(m.placeId, id);
     } catch (err) {
-      if (id === reqId.current) setSel({ kind: "error", message: (err as Error).message, lat: 0, lng: 0 });
+      if (id === reqId.current) setSel({ kind: "empty", at: { lat: 0, lng: 0 }, message: (err as Error).message });
     }
-  }, []);
+  }, [loadOutline]);
 
-  // /?place=<business id> — open a business (links from market pages, tokenize wizard)
+  const pickSearch = useCallback(async (r: SearchResult) => {
+    if (!r.place) {
+      if (r.bbox) mapRef.current?.fitBounds(r.bbox);
+      else mapRef.current?.flyTo(r.lat, r.lng, 12);
+      return;
+    }
+    const id = ++reqId.current;
+    setOutline(null);
+    setSel({ kind: "loading", at: { lat: r.lat, lng: r.lng }, label: r.label });
+    try {
+      const place = await api<Place>("/api/places/resolve", { method: "POST", json: { sourceId: r.place.sourceId } });
+      if (id !== reqId.current) return;
+      showPlace(place, null, [], null, id, true);
+    } catch (err) {
+      if (id === reqId.current) setSel({ kind: "empty", at: { lat: r.lat, lng: r.lng }, message: (err as Error).message });
+    }
+  }, [showPlace]);
+
+  // /app?place=<id> — open a place (links from market pages and the tokenize page)
   const placeParam = params.get("place");
   useEffect(() => {
     if (!placeParam || !/^[0-9a-f-]{36}$/i.test(placeParam)) return;
-    let alive = true;
-    api<Business>(`/api/businesses/${placeParam}`)
-      .then((b) => {
-        if (!alive) return;
-        setSel({ kind: "business", business: b });
-        setTimeout(() => mapRef.current?.flyTo(b.lat, b.lng, 17), 400);
+    const id = ++reqId.current;
+    api<Place>(`/api/places/${placeParam}`)
+      .then((p) => {
+        if (id !== reqId.current) return;
+        setTimeout(() => showPlace(p, null, [], null, id, true), 300);
       })
       .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [placeParam]);
-
-  const onPoiClick = useCallback((p: { lat: number; lng: number; label: string | null }) => {
-    void resolve({ kind: "click", lat: p.lat, lng: p.lng, label: p.label ?? undefined }, p);
-  }, [resolve]);
-
-  const onPointPick = useCallback((p: { lat: number; lng: number }) => {
-    reqId.current++;
-    setSel({ kind: "add", ...p });
-  }, []);
-
-  const pickSearch = useCallback((r: SearchResult) => {
-    if (r.place) {
-      mapRef.current?.flyTo(r.lat, r.lng, 18);
-      void resolve({ kind: "osm", sourceId: r.place.sourceId }, { lat: r.lat, lng: r.lng, label: r.place.name });
-    } else if (r.bbox) {
-      mapRef.current?.fitBounds(r.bbox);
-    } else {
-      mapRef.current?.flyTo(r.lat, r.lng, 15);
-    }
-  }, [resolve]);
+  }, [placeParam, showPlace]);
 
   const tokenized = pins.data?.items.length ?? 0;
+  const close = () => {
+    reqId.current++;
+    setSel(null);
+    setOutline(null);
+  };
 
   return (
     <div className="map-home">
       <WorldMap
         ref={mapRef}
         pins={pins.data?.items ?? []}
-        selected={selectedPoint(sel)}
-        addMode={addMode}
+        selected={markerOf(sel)}
+        outline={outline}
         onPinClick={openMarket}
-        onPoiClick={onPoiClick}
-        onPointPick={onPointPick}
-        onEmptyClick={() => setSel(null)}
+        onMapClick={(p) => void pickAt({ lat: p.lat, lng: p.lng }, levelForMapZoom(p.zoom), false)}
         onZoom={setZoom}
       />
 
       <div className="map-top">
-        <SearchBox onPick={pickSearch} near={() => mapRef.current?.center() ?? null} />
-        <button
-          type="button"
-          className={`btn map-add-btn${addMode ? " is-on" : ""}`}
-          aria-pressed={addMode}
-          onClick={() => {
-            setAddMode((v) => !v);
-            if (addMode && sel?.kind === "add") setSel(null);
-          }}
-        >
-          {addMode ? "✕ Cancel" : "＋ Add a business"}
-        </button>
+        <SearchBox onPick={pickSearch} />
       </div>
 
-      {addMode && sel?.kind !== "add" ? <div className="map-hint">Tap the exact spot of the business on the map</div> : null}
-      {!addMode && !sel && zoom < 14 ? (
-        <div className="map-hint map-hint-soft">Search a place or zoom in — tap any shop, café or restaurant to tokenize it</div>
+      {!sel ? (
+        <div className="map-hint map-hint-soft">
+          Click anywhere to pick a {levelForMapZoom(zoom) === "country" ? "country" : levelForMapZoom(zoom) === "state" ? "state or region" : levelForMapZoom(zoom) === "city" ? "city" : "town or neighbourhood"} — zoom in for smaller areas
+        </div>
       ) : null}
 
       <aside className="map-side">
         <div className="map-stat">
           <strong>{tokenized.toLocaleString()}</strong>
-          <span>businesses on the map</span>
-        </div>
-        <div className="map-legend">
-          <span><i className="dot dot-accent" /> tokenized</span>
-          <span><i className="dot dot-green" /> claimed by owner</span>
+          <span>places tokenized</span>
         </div>
         <LiveFeed />
       </aside>
 
       {sel ? (
         <div className="place-sheet" role="dialog" aria-label="Selected place">
-          <button type="button" className="place-close" aria-label="Close" onClick={() => { reqId.current++; setSel(null); }}>✕</button>
+          <button type="button" className="place-close" aria-label="Close" onClick={close}>✕</button>
           {sel.kind === "loading" ? (
             <div className="stack">
-              <div className="sheet-title">{sel.label ?? "Looking up this place…"}</div>
-              <div className="row small muted"><span className="spinner" aria-hidden /> Finding it on OpenStreetMap…</div>
+              <div className="sheet-title">{sel.label}</div>
+              <div className="row small muted"><span className="spinner" aria-hidden /> Looking it up on OpenStreetMap…</div>
             </div>
           ) : null}
-          {sel.kind === "error" ? (
-            <div className="stack">
-              <Notice tone="warn">{sel.message}</Notice>
-              {sel.lat || sel.lng ? (
-                <button type="button" className="btn btn-primary" onClick={() => { setAddMode(true); setSel({ kind: "add", lat: sel.lat, lng: sel.lng }); }}>
-                  ＋ Add a business here
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-          {sel.kind === "business" ? <BusinessSheet b={sel.business} onOpenMarket={openMarket} /> : null}
-          {sel.kind === "market" ? <MarketSheet m={sel.market} /> : null}
-          {sel.kind === "add" ? (
-            <AddBusinessForm
-              lat={sel.lat}
-              lng={sel.lng}
-              onDone={(b) => {
-                setAddMode(false);
-                setSel({ kind: "business", business: b });
-                void pins.refetch();
-              }}
+          {sel.kind === "empty" ? <Notice tone="warn">{sel.message}</Notice> : null}
+          {sel.kind === "place" ? (
+            <PlaceSheet
+              sel={sel}
+              onLevel={(level) => sel.at && void pickAt(sel.at, level, true)}
+              onOpenMarket={openMarket}
             />
           ) : null}
+          {sel.kind === "market" ? <MarketSheet m={sel.market} /> : null}
         </div>
       ) : null}
     </div>
   );
 }
 
-function SearchBox({ onPick, near }: { onPick(r: SearchResult): void; near(): { lat: number; lng: number } | null }) {
+function SearchBox({ onPick }: { onPick(r: SearchResult): void }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<SearchResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const nearRef = useRef(near);
-  nearRef.current = near;
 
-  useEffect(() => {
+  // Searches run on Enter / the button only (no search-as-you-type: OpenStreetMap's usage policy).
+  async function run() {
     const term = q.trim();
-    if (term.length < 3) {
-      setItems(null);
+    if (term.length < 2 || busy) return;
+    setBusy(true);
+    setOpen(true);
+    try {
+      const r = await api<{ items: SearchResult[] }>(`/api/places/search?${new URLSearchParams({ q: term })}`);
+      setItems(r.items);
       setError(null);
-      return;
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
-    const t = setTimeout(async () => {
-      setBusy(true);
-      try {
-        const c = nearRef.current();
-        const qs = new URLSearchParams({ q: term });
-        if (c) {
-          qs.set("lat", c.lat.toFixed(4));
-          qs.set("lng", c.lng.toFixed(4));
-        }
-        const r = await api<{ items: SearchResult[] }>(`/api/places/search?${qs}`);
-        setItems(r.items);
-        setError(null);
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setBusy(false);
-      }
-    }, 450);
-    return () => clearTimeout(t);
-  }, [q]);
+  }
 
   return (
     <div className="map-search">
-      <label className="map-search-box">
+      <form className="map-search-box" role="search" onSubmit={(e) => { e.preventDefault(); void run(); }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
         <input
-          aria-label="Search any business, street or city"
-          placeholder="Search any business, street or city on earth"
+          aria-label="Search any country, city or neighbourhood"
+          placeholder="Search a country, city or neighbourhood — e.g. New York"
           value={q}
-          onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+          onChange={(e) => { setQ(e.target.value); if (!e.target.value) { setItems(null); setError(null); } }}
           onFocus={() => setOpen(true)}
         />
-        {busy ? <span className="spinner" aria-hidden /> : null}
-      </label>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={busy || q.trim().length < 2}>
+          {busy ? <span className="spinner" aria-hidden /> : "Search"}
+        </button>
+      </form>
       {open && (items || error) ? (
         <ul className="map-search-results" role="listbox">
           {error ? <li className="muted small">{error}</li> : null}
-          {items?.length === 0 ? <li className="muted small">Nothing found. Try another spelling, or add the business yourself.</li> : null}
+          {items?.length === 0 ? <li className="muted small">Nothing found. Try another spelling.</li> : null}
           {items?.map((r, i) => (
             <li key={`${r.lat},${r.lng},${i}`}>
               <button type="button" onClick={() => { setOpen(false); onPick(r); }}>
@@ -269,37 +255,49 @@ function SearchBox({ onPick, near }: { onPick(r: SearchResult): void; near(): { 
   );
 }
 
-function BusinessSheet({ b, onOpenMarket }: { b: Business; onOpenMarket(slug: string): void }) {
-  const where = [b.address, b.city, b.country].filter(Boolean).join(", ");
+function PlaceSheet({ sel, onLevel, onOpenMarket }: {
+  sel: Extract<Selection, { kind: "place" }>;
+  onLevel(level: AreaLevel): void;
+  onOpenMarket(slug: string): void;
+}) {
+  const p = sel.place;
   return (
     <div className="stack">
       <div className="row" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
-        <div className="sheet-avatar" aria-hidden>{b.name.slice(0, 1).toUpperCase()}</div>
+        <div className="sheet-avatar" aria-hidden>{p.countryCode ? flagOf(p.countryCode) : p.name.slice(0, 1).toUpperCase()}</div>
         <div style={{ minWidth: 0 }}>
-          <div className="sheet-title">{b.name}</div>
-          <div className="small muted">{[b.category, where].filter(Boolean).join(" · ")}</div>
+          <div className="sheet-title">{p.name}</div>
+          <div className="small muted">{[p.placeType, p.region].filter(Boolean).join(" · ")}</div>
         </div>
       </div>
-      <div className="row" style={{ gap: 6 }}>
-        <span className="badge">{b.claimed ? "✓ Claimed" : "Unofficial"}</span>
-        <span className="badge">{b.market ? `Tokenized · $${b.market.symbol}` : "Not tokenized yet"}</span>
-      </div>
-      {safeHttpUrl(b.website) ? (
-        <a className="small" href={safeHttpUrl(b.website)!} target="_blank" rel="noopener noreferrer nofollow">{b.website}</a>
+      {sel.levels.length > 1 && sel.at ? (
+        <div className="level-chips" role="group" aria-label="Pick a bigger or smaller area">
+          {sel.levels.map((l) => (
+            <button
+              key={`${l.level}-${l.label}`}
+              type="button"
+              className="level-chip"
+              aria-pressed={l.label === p.name}
+              onClick={() => onLevel(l.level)}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
       ) : null}
-      {b.hidden ? (
-        <Notice tone="info">The owner asked for this place not to be listed on mapin.</Notice>
-      ) : b.market ? (
-        <button type="button" className="btn btn-primary btn-lg" onClick={() => onOpenMarket(b.slug)}>View ${b.market.symbol}</button>
+      {p.hidden ? (
+        <Notice tone="info">This place is not listed on mapin.</Notice>
+      ) : p.market ? (
+        <button type="button" className="btn btn-primary btn-lg" onClick={() => onOpenMarket(p.slug)}>View ${p.market.symbol}</button>
       ) : (
         <>
           <div className="sheet-ticker">
             <span className="small muted">Suggested ticker</span>
-            <strong className="mono">${suggestTicker(b.name)}</strong>
-            <span className="tiny muted">you can change it</span>
+            <strong className="mono">${suggestTicker(p.name)}</strong>
+            <span className="tiny muted">editable</span>
           </div>
-          <Link className="btn btn-primary btn-lg" href={`/tokenize/${b.id}`}>Tokenize this business</Link>
-          <p className="tiny muted" style={{ margin: 0 }}>{OWNER_FEE_BPS / 100}% of every trade is held for the owner until they claim it.</p>
+          <Link className="btn btn-primary btn-lg" href={`/tokenize/${p.id}`}>Tokenize {p.name}</Link>
+          <p className="tiny muted" style={{ margin: 0 }}>Not tokenized yet — be the first. One place, one token.</p>
         </>
       )}
     </div>
@@ -312,14 +310,11 @@ function MarketSheet({ m }: { m: MarketDetail }) {
       <div className="row" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
         <TokenLogo src={m.imageUrl} symbol={m.symbol} />
         <div style={{ minWidth: 0 }}>
-          <div className="sheet-title">{m.businessName}</div>
-          <div className="small muted">{[m.category, m.city, m.country].filter(Boolean).join(" · ")}</div>
+          <div className="sheet-title">{m.placeName}</div>
+          <div className="small muted">{[m.placeType, m.region].filter(Boolean).join(" · ")}</div>
         </div>
       </div>
-      <div className="row" style={{ gap: 6 }}>
-        <span className="badge badge-black">${m.symbol}</span>
-        <span className={`badge ${m.claimed ? "badge-green" : ""}`}>{m.claimed ? "✓ Claimed" : "Unofficial"}</span>
-      </div>
+      <span className="badge badge-black" style={{ alignSelf: "flex-start" }}>${m.symbol}</span>
       <dl className="kv">
         <dt>Price</dt><dd>{fmtPrice(m.priceWad, m.quoteSymbol)}</dd>
         <dt>Market cap</dt><dd>{fmtWad(m.marketCapWad, m.quoteSymbol)}</dd>
@@ -331,71 +326,9 @@ function MarketSheet({ m }: { m: MarketDetail }) {
   );
 }
 
-function AddBusinessForm({ lat, lng, onDone }: { lat: number; lng: number; onDone(b: Business): void }) {
-  const { isConnected } = useConnection();
-  const signedIn = useIsSignedIn();
-  const { signIn, pending: signing, error: signError } = useWalletSignIn();
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("Restaurant");
-  const [address, setAddress] = useState("");
-  const [website, setWebsite] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function save() {
-    setBusy(true);
-    setError(null);
-    try {
-      const b = await api<Business>("/api/businesses/resolve", {
-        method: "POST",
-        json: { kind: "manual", lat, lng, name, category, address, website },
-      });
-      onDone(b);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="stack">
-      <div className="sheet-title">Add a business</div>
-      <div className="tiny muted mono">{lat.toFixed(5)}, {lng.toFixed(5)} · tap the map again to move the pin</div>
-      <div className="field">
-        <label className="label" htmlFor="add-name">Business name</label>
-        <input id="add-name" className="input" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder="Warung Bu Tini" />
-      </div>
-      <div className="field">
-        <label className="label" htmlFor="add-cat">Type</label>
-        <select id="add-cat" className="select" value={category} onChange={(e) => setCategory(e.target.value)}>
-          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-        </select>
-      </div>
-      <div className="field">
-        <label className="label" htmlFor="add-addr">Street / area (optional)</label>
-        <input id="add-addr" className="input" maxLength={200} value={address} onChange={(e) => setAddress(e.target.value)} />
-      </div>
-      <div className="field">
-        <label className="label" htmlFor="add-web">Website (optional)</label>
-        <input id="add-web" className="input" maxLength={200} value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://" />
-      </div>
-      {!isConnected ? (
-        <>
-          <p className="small" style={{ margin: 0 }}>Connect a wallet to add places to the map.</p>
-          <ConnectButton />
-        </>
-      ) : !signedIn ? (
-        <button type="button" className="btn btn-primary" disabled={signing} onClick={() => signIn()}>
-          {signing ? <span className="spinner" aria-hidden /> : null} Sign in with wallet
-        </button>
-      ) : (
-        <button type="button" className="btn btn-primary btn-lg" disabled={busy || name.trim().length < 2} onClick={save}>
-          {busy ? <span className="spinner" aria-hidden /> : null} Put it on the map
-        </button>
-      )}
-      {signError ? <Notice tone="error">{signError}</Notice> : null}
-      {error ? <Notice tone="error">{error}</Notice> : null}
-    </div>
-  );
+/** "US" → 🇺🇸 */
+function flagOf(code: string): string {
+  const cc = code.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return "🌍";
+  return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }

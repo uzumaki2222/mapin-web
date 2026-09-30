@@ -9,7 +9,7 @@ export default function NotFound() {
       <p className="muted">This page or market does not exist.</p>
       <div className="row">
         <Link className="btn btn-primary" href="/explore">Explore markets</Link>
-        <Link className="btn" href="/create">Create a market</Link>
+        <Link className="btn" href="/app">Open the map</Link>
       </div>
     </div>
   );

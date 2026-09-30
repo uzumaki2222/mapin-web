@@ -10,16 +10,16 @@ import { PUBLIC_APP_URL } from "@/lib/config/public";
 // icon.png, apple-icon.png, opengraph-image.png, twitter-image.png (all made from the official logo).
 export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_APP_URL),
-  title: { default: "mapin — tokenize any business on earth", template: "%s · mapin" },
-  description: "Find any shop, café or restaurant on the world map and tokenize it on Robinhood Chain. A share of every trade is held for the real owner.",
+  title: { default: "mapin — tokenize any place on earth", template: "%s · mapin" },
+  description: "A token launchpad on a world map. Every country, city and neighbourhood can have one token, launched on BNB Smart Chain.",
   applicationName: "mapin",
   openGraph: {
     type: "website",
     siteName: "mapin",
-    title: "mapin — tokenize any business on earth",
-    description: "Find any shop, café or restaurant on the world map and tokenize it on Robinhood Chain.",
+    title: "mapin — tokenize any place on earth",
+    description: "A token launchpad on a world map. Every country, city and neighbourhood can have one token.",
   },
-  twitter: { card: "summary_large_image", title: "mapin — tokenize any business on earth" },
+  twitter: { card: "summary_large_image", title: "mapin — tokenize any place on earth" },
 };
 
 export const viewport: Viewport = { themeColor: "#efe2c4" };

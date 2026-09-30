@@ -25,6 +25,7 @@
   --display: "Fraunces", Georgia, "Times New Roman", serif;
   --max: 1200px;
   --header-h: 68px;
+  --ticker-h: 38px;
 }
 
 * { box-sizing: border-box; }
@@ -254,7 +255,7 @@ html, body { overflow-x: hidden; }
 .footer .muted { color: var(--grey-2); }
 .footer .container { display: flex; gap: 20px; align-items: center; justify-content: space-between; padding-top: 20px; padding-bottom: 20px; flex-wrap: wrap; font-size: 13px; }
 .footer img { border-radius: 2px; }
-.footer a { color: var(--yellow); }
+.footer a { color: var(--yellow); text-decoration: none; }
 
 .empty { border: 2px dashed var(--grey-3); border-radius: var(--radius); padding: 32px; text-align: center; color: var(--grey-4); background: var(--white); }
 .skeleton { background: linear-gradient(90deg, var(--grey-1), var(--grey-2), var(--grey-1)); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: var(--radius); }
@@ -296,7 +297,7 @@ html, body { overflow-x: hidden; }
 @keyframes value-flash { 0% { background: var(--yellow); } 100% { background: transparent; } }
 
 /* ================================================================ mapin: map home */
-.map-home { position: relative; height: calc(100vh - var(--header-h)); height: calc(100dvh - var(--header-h)); overflow: hidden; background: var(--paper); }
+.map-home { position: relative; height: calc(100vh - var(--header-h) - var(--ticker-h)); height: calc(100dvh - var(--header-h) - var(--ticker-h)); overflow: hidden; background: var(--paper); }
 .world-map { position: absolute; inset: 0; }
 /* MapLibre's own CSS sets .maplibregl-map { position: relative }, which would collapse the map to 0 px
    height; an explicit size keeps it full-screen whichever stylesheet loads last. */
@@ -374,3 +375,53 @@ html, body { overflow-x: hidden; }
 .owner-card .review dt { color: var(--grey-2); }
 .owner-held { font-family: var(--display); font-size: 28px; font-weight: 800; }
 .dns-box { background: #3a2917; padding: 10px; border-radius: var(--radius); grid-template-columns: 60px 1fr !important; }
+
+/* ================================================================ live ticker */
+.ticker { height: var(--ticker-h); }
+.ticker-label { gap: 8px; }
+.ticker-empty { display: flex; align-items: center; padding: 0 14px; color: var(--grey-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticker-type { font-weight: 700; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #3a2917; }
+.ticker-type.buy { color: #7fd89a; }
+.ticker-type.sell { color: #f09a84; }
+.ticker-type.launch { color: var(--yellow); }
+
+/* ================================================================ level switcher */
+.level-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.level-chip { font-family: var(--mono); font-size: 12px; font-weight: 600; padding: 6px 10px; border: 1.5px solid var(--black); border-radius: 999px; background: var(--white); cursor: pointer; }
+.level-chip[aria-pressed="true"] { background: var(--black); color: var(--white); }
+.level-chip:hover { background: var(--yellow-soft); }
+.level-chip[aria-pressed="true"]:hover { background: var(--black); }
+
+/* ================================================================ landing */
+.landing-hero { padding-top: 72px; padding-bottom: 56px; }
+.landing-hero > * { max-width: 900px; }
+.landing-kicker { font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rust); margin-bottom: 14px; }
+.landing-hero h1 { font-size: clamp(2.6rem, 7vw, 5rem); line-height: 1.02; margin: 0 0 20px; }
+.landing-lead { font-size: clamp(1.1rem, 2.2vw, 1.35rem); line-height: 1.55; max-width: 44ch; margin-bottom: 28px; }
+.landing-section { padding-top: 40px; padding-bottom: 40px; border-top: 2px solid var(--grey-2); }
+.landing-section h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
+.landing-steps { list-style: none; padding: 0; margin: 24px 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.landing-steps h3 { font-size: 1.2rem; margin: 8px 0; }
+.landing-steps p { margin: 0; color: var(--grey-4); }
+.landing-num { font-family: var(--mono); font-weight: 700; color: var(--rust); }
+.landing-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.landing-cols p { color: var(--grey-4); line-height: 1.6; }
+.landing-cta { text-align: center; padding-bottom: 72px; }
+.landing-cta h2 { margin-bottom: 20px; }
+@media (max-width: 900px) { .landing-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } .landing-cols { grid-template-columns: 1fr; gap: 8px; } }
+@media (max-width: 560px) { .landing-steps { grid-template-columns: 1fr; } .landing-hero { padding-top: 40px; } }
+
+/* ================================================================ docs */
+.docs { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; align-items: start; }
+.docs-nav { position: sticky; top: calc(var(--header-h) + 20px); }
+.docs-nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.docs-nav a { text-decoration: none; font-size: 14px; }
+.docs-nav a:hover { color: var(--rust); }
+.docs-body { max-width: 760px; line-height: 1.7; }
+.docs-body h1 { font-size: 2.4rem; }
+.docs-body section { padding-top: 12px; margin-bottom: 28px; scroll-margin-top: calc(var(--header-h) + 16px); }
+.docs-body h2 { font-size: 1.5rem; border-bottom: 2px solid var(--grey-2); padding-bottom: 6px; }
+.docs-body h3 { font-size: 1.1rem; margin-top: 18px; }
+.docs-body li { margin-bottom: 6px; }
+.docs-body code { background: var(--grey-1); padding: 1px 6px; border-radius: 4px; }
+@media (max-width: 860px) { .docs { grid-template-columns: 1fr; gap: 16px; } .docs-nav { position: static; } }
