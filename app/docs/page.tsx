@@ -29,7 +29,6 @@ export default function DocsPage() {
             <li key={s.id}><a href={`#${s.id}`}>{s.title}</a></li>
           ))}
         </ul>
-        <Link href="/app" className="btn btn-primary btn-sm" style={{ marginTop: 12 }}>Launch App</Link>
       </aside>
 
       <article className="docs-body">

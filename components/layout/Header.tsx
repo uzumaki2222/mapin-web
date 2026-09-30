@@ -6,6 +6,7 @@ import { Logo } from "@/components/ui/Logo";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { NetworkGuard } from "@/components/wallet/NetworkGuard";
 import { LiveTicker } from "@/components/app/LiveTicker";
+import { XLink } from "@/components/ui/XLink";
 
 export function Header() {
   const pathname = usePathname() ?? "/";
@@ -21,7 +22,7 @@ export function Header() {
           </Link>
           <nav className="header-nav" aria-label="Main">
             {onLanding || onDocs ? (
-              <Link href="/docs" aria-current={onDocs ? "page" : undefined}>Docs</Link>
+              <XLink className="header-x" />
             ) : (
               <>
                 <Link href="/app" aria-current={onMap ? "page" : undefined}>Map</Link>
