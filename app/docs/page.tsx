@@ -6,31 +6,9 @@ export const metadata: Metadata = {
   description: "How mapin works: picking a place, launching its token, creator fees, trading and graduation on BNB Smart Chain.",
 };
 
-const SECTIONS = [
-  { id: "overview", title: "Overview" },
-  { id: "places", title: "Picking a place" },
-  { id: "launch", title: "Launching a token" },
-  { id: "creator-fees", title: "Creator fees" },
-  { id: "trading", title: "Trading and graduation" },
-  { id: "fees", title: "Fees at a glance" },
-  { id: "live", title: "Live feed" },
-  { id: "map-data", title: "Map data" },
-  { id: "safety", title: "Safety and risks" },
-  { id: "faq", title: "FAQ" },
-];
-
 export default function DocsPage() {
   return (
     <div className="container section docs">
-      <aside className="docs-nav" aria-label="Contents">
-        <div className="panel-title">Docs</div>
-        <ul>
-          {SECTIONS.map((s) => (
-            <li key={s.id}><a href={`#${s.id}`}>{s.title}</a></li>
-          ))}
-        </ul>
-      </aside>
-
       <article className="docs-body">
         <h1>mapin docs</h1>
 
