@@ -1,0 +1,908 @@
+[
+{
+"code": "AED",
+"name": "United Arab Emirates dirham",
+"symbol": "د.إ",
+"usdRate": 3.6725
+},
+{
+"code": "AFN",
+"name": "Afghan afghani",
+"symbol": "؋",
+"usdRate": 64.810756
+},
+{
+"code": "ALL",
+"name": "Albanian lek",
+"symbol": "L",
+"usdRate": 81.936281
+},
+{
+"code": "AMD",
+"name": "Armenian dram",
+"symbol": "֏",
+"usdRate": 361.925361
+},
+{
+"code": "ANG",
+"name": "Netherlands Antillean guilder",
+"symbol": "ƒ",
+"usdRate": 1.79
+},
+{
+"code": "AOA",
+"name": "Angolan kwanza",
+"symbol": "Kz",
+"usdRate": 926.184908
+},
+{
+"code": "ARS",
+"name": "Argentine peso",
+"symbol": "$",
+"usdRate": 1515.8766
+},
+{
+"code": "AUD",
+"name": "Australian dollar",
+"symbol": "$",
+"usdRate": 1.433149
+},
+{
+"code": "AWG",
+"name": "Aruban florin",
+"symbol": "ƒ",
+"usdRate": 1.79
+},
+{
+"code": "AZN",
+"name": "Azerbaijani manat",
+"symbol": "₼",
+"usdRate": 1.699108
+},
+{
+"code": "BAM",
+"name": "Bosnia and Herzegovina convertible mark",
+"symbol": "KM",
+"usdRate": 1.745453
+},
+{
+"code": "BBD",
+"name": "Barbadian dollar",
+"symbol": "$",
+"usdRate": 2
+},
+{
+"code": "BDT",
+"name": "Bangladeshi taka",
+"symbol": "৳",
+"usdRate": 123.224135
+},
+{
+"code": "BHD",
+"name": "Bahraini dinar",
+"symbol": ".د.ب",
+"usdRate": 0.376
+},
+{
+"code": "BIF",
+"name": "Burundian franc",
+"symbol": "Fr",
+"usdRate": 3003.374621
+},
+{
+"code": "BMD",
+"name": "Bermudian dollar",
+"symbol": "$",
+"usdRate": 1
+},
+{
+"code": "BND",
+"name": "Brunei dollar",
+"symbol": "$",
+"usdRate": 1.280697
+},
+{
+"code": "BOB",
+"name": "Bolivian boliviano",
+"symbol": "Bs.",
+"usdRate": 11.950434
+},
+{
+"code": "BRL",
+"name": "Brazilian real",
+"symbol": "R$",
+"usdRate": 5.010865
+},
+{
+"code": "BSD",
+"name": "Bahamian dollar",
+"symbol": "$",
+"usdRate": 1
+},
+{
+"code": "BTN",
+"name": "Bhutanese ngultrum",
+"symbol": "Nu.",
+"usdRate": 96.829384
+},
+{
+"code": "BWP",
+"name": "Botswana pula",
+"symbol": "P",
+"usdRate": 14.173473
+},
+{
+"code": "BYN",
+"name": "Belarusian ruble",
+"symbol": "Br",
+"usdRate": 3.042521
+},
+{
+"code": "BZD",
+"name": "Belize dollar",
+"symbol": "$",
+"usdRate": 2
+},
+{
+"code": "CAD",
+"name": "Canadian dollar",
+"symbol": "$",
+"usdRate": 1.425015
+},
+{
+"code": "CDF",
+"name": "Congolese franc",
+"symbol": "FC",
+"usdRate": 2310.2333
+},
+{
+"code": "CHF",
+"name": "Swiss franc",
+"symbol": "Fr",
+"usdRate": 0.830936
+},
+{
+"code": "CLP",
+"name": "Chilean peso",
+"symbol": "$",
+"usdRate": 978.602338
+},
+{
+"code": "CNY",
+"name": "Chinese yuan",
+"symbol": "¥",
+"usdRate": 6.706851
+},
+{
+"code": "COP",
+"name": "Colombian peso",
+"symbol": "$",
+"usdRate": 3236.681829
+},
+{
+"code": "CRC",
+"name": "Costa Rican colón",
+"symbol": "₡",
+"usdRate": 455.5843
+},
+{
+"code": "CUP",
+"name": "Cuban peso",
+"symbol": "$",
+"usdRate": 24
+},
+{
+"code": "CVE",
+"name": "Cape Verdean escudo",
+"symbol": "Esc",
+"usdRate": 98.404428
+},
+{
+"code": "CZK",
+"name": "Czech koruna",
+"symbol": "Kč",
+"usdRate": 21.76714
+},
+{
+"code": "DJF",
+"name": "Djiboutian franc",
+"symbol": "Fr",
+"usdRate": 177.721
+},
+{
+"code": "DKK",
+"name": "krone",
+"symbol": "kr.",
+"usdRate": 6.670889
+},
+{
+"code": "DOP",
+"name": "Dominican peso",
+"symbol": "$",
+"usdRate": 60.523185
+},
+{
+"code": "DZD",
+"name": "Algerian dinar",
+"symbol": "دج",
+"usdRate": 134.433753
+},
+{
+"code": "EGP",
+"name": "Egyptian pound",
+"symbol": "E£",
+"usdRate": 52.38102
+},
+{
+"code": "ERN",
+"name": "Eritrean nakfa",
+"symbol": "Nfk",
+"usdRate": 15
+},
+{
+"code": "ETB",
+"name": "Ethiopian birr",
+"symbol": "Br",
+"usdRate": 161.729361
+},
+{
+"code": "EUR",
+"name": "Euro",
+"symbol": "€",
+"usdRate": 0.892438
+},
+{
+"code": "FJD",
+"name": "Fijian dollar",
+"symbol": "$",
+"usdRate": 2.25198
+},
+{
+"code": "FKP",
+"name": "Falkland Islands pound",
+"symbol": "£",
+"usdRate": 0.755895
+},
+{
+"code": "GBP",
+"name": "British pound",
+"symbol": "£",
+"usdRate": 0.755923
+},
+{
+"code": "GEL",
+"name": "lari",
+"symbol": "₾",
+"usdRate": 2.598914
+},
+{
+"code": "GHS",
+"name": "Ghanaian cedi",
+"symbol": "₵",
+"usdRate": 11.812041
+},
+{
+"code": "GIP",
+"name": "Gibraltar pound",
+"symbol": "£",
+"usdRate": 0.755895
+},
+{
+"code": "GMD",
+"name": "dalasi",
+"symbol": "D",
+"usdRate": 74.549095
+},
+{
+"code": "GNF",
+"name": "Guinean franc",
+"symbol": "Fr",
+"usdRate": 8797.177375
+},
+{
+"code": "GTQ",
+"name": "Guatemalan quetzal",
+"symbol": "Q",
+"usdRate": 7.632683
+},
+{
+"code": "GYD",
+"name": "Guyanese dollar",
+"symbol": "$",
+"usdRate": 208.977989
+},
+{
+"code": "HKD",
+"name": "Hong Kong dollar",
+"symbol": "$",
+"usdRate": 7.848229
+},
+{
+"code": "HNL",
+"name": "Honduran lempira",
+"symbol": "L",
+"usdRate": 26.81248
+},
+{
+"code": "HTG",
+"name": "Haitian gourde",
+"symbol": "G",
+"usdRate": 130.805702
+},
+{
+"code": "HUF",
+"name": "Hungarian forint",
+"symbol": "Ft",
+"usdRate": 326.114752
+},
+{
+"code": "IDR",
+"name": "Indonesian rupiah",
+"symbol": "Rp",
+"usdRate": 17889.063344
+},
+{
+"code": "ILS",
+"name": "Israeli new shekel",
+"symbol": "₪",
+"usdRate": 3.063406
+},
+{
+"code": "INR",
+"name": "Indian rupee",
+"symbol": "₹",
+"usdRate": 96.829695
+},
+{
+"code": "IQD",
+"name": "Iraqi dinar",
+"symbol": "ع.د",
+"usdRate": 1432.489475
+},
+{
+"code": "IRR",
+"name": "Iranian rial",
+"symbol": "﷼",
+"usdRate": 1674585.098501
+},
+{
+"code": "ISK",
+"name": "Icelandic króna",
+"symbol": "kr",
+"usdRate": 122.077247
+},
+{
+"code": "JMD",
+"name": "Jamaican dollar",
+"symbol": "$",
+"usdRate": 158.815697
+},
+{
+"code": "JOD",
+"name": "Jordanian dinar",
+"symbol": "د.ا",
+"usdRate": 0.709
+},
+{
+"code": "JPY",
+"name": "Japanese yen",
+"symbol": "¥",
+"usdRate": 158.287265
+},
+{
+"code": "KES",
+"name": "Kenyan shilling",
+"symbol": "Sh",
+"usdRate": 129.711254
+},
+{
+"code": "KGS",
+"name": "Kyrgyzstani som",
+"symbol": "с",
+"usdRate": 87.439461
+},
+{
+"code": "KHR",
+"name": "Cambodian riel",
+"symbol": "៛",
+"usdRate": 4049.483766
+},
+{
+"code": "KMF",
+"name": "Comorian franc",
+"symbol": "Fr",
+"usdRate": 439.049608
+},
+{
+"code": "KRW",
+"name": "South Korean won",
+"symbol": "₩",
+"usdRate": 1341.69027
+},
+{
+"code": "KWD",
+"name": "Kuwaiti dinar",
+"symbol": "د.ك",
+"usdRate": 0.310482
+},
+{
+"code": "KYD",
+"name": "Cayman Islands dollar",
+"symbol": "$",
+"usdRate": 0.833333
+},
+{
+"code": "KZT",
+"name": "Kazakhstani tenge",
+"symbol": "₸",
+"usdRate": 449.907367
+},
+{
+"code": "LAK",
+"name": "Lao kip",
+"symbol": "₭",
+"usdRate": 22222.239253
+},
+{
+"code": "LBP",
+"name": "Lebanese pound",
+"symbol": "ل.ل",
+"usdRate": 89500
+},
+{
+"code": "LKR",
+"name": "Sri Lankan rupee",
+"symbol": "Rs රු",
+"usdRate": 330.716303
+},
+{
+"code": "LRD",
+"name": "Liberian dollar",
+"symbol": "$",
+"usdRate": 170.771613
+},
+{
+"code": "LSL",
+"name": "Lesotho loti",
+"symbol": "L",
+"usdRate": 16.539875
+},
+{
+"code": "LYD",
+"name": "Libyan dinar",
+"symbol": "ل.د",
+"usdRate": 6.409988
+},
+{
+"code": "MAD",
+"name": "Moroccan dirham",
+"symbol": "د.م.",
+"usdRate": 9.884613
+},
+{
+"code": "MDL",
+"name": "Moldovan leu",
+"symbol": "L",
+"usdRate": 17.843651
+},
+{
+"code": "MGA",
+"name": "Malagasy ariary",
+"symbol": "Ar",
+"usdRate": 4470.852024
+},
+{
+"code": "MKD",
+"name": "denar",
+"symbol": "den",
+"usdRate": 54.573615
+},
+{
+"code": "MMK",
+"name": "Burmese kyat",
+"symbol": "Ks",
+"usdRate": 2096.022642
+},
+{
+"code": "MNT",
+"name": "Mongolian tögrög",
+"symbol": "₮",
+"usdRate": 3619.159532
+},
+{
+"code": "MOP",
+"name": "Macanese pataca",
+"symbol": "P",
+"usdRate": 8.083676
+},
+{
+"code": "MRU",
+"name": "Mauritanian ouguiya",
+"symbol": "UM",
+"usdRate": 40.097129
+},
+{
+"code": "MUR",
+"name": "Mauritian rupee",
+"symbol": "₨",
+"usdRate": 47.322292
+},
+{
+"code": "MVR",
+"name": "Maldivian rufiyaa",
+"symbol": ".ރ",
+"usdRate": 15.432712
+},
+{
+"code": "MWK",
+"name": "Malawian kwacha",
+"symbol": "MK",
+"usdRate": 1746.476874
+},
+{
+"code": "MXN",
+"name": "Mexican peso",
+"symbol": "$",
+"usdRate": 18.304854
+},
+{
+"code": "MYR",
+"name": "Malaysian ringgit",
+"symbol": "RM",
+"usdRate": 4.087459
+},
+{
+"code": "MZN",
+"name": "Mozambican metical",
+"symbol": "MT",
+"usdRate": 63.799826
+},
+{
+"code": "NAD",
+"name": "Namibian dollar",
+"symbol": "$",
+"usdRate": 16.539875
+},
+{
+"code": "NGN",
+"name": "Nigerian naira",
+"symbol": "₦",
+"usdRate": 1330.995081
+},
+{
+"code": "NIO",
+"name": "Nicaraguan córdoba",
+"symbol": "C$",
+"usdRate": 36.755327
+},
+{
+"code": "NOK",
+"name": "krone",
+"symbol": "kr",
+"usdRate": 9.563463
+},
+{
+"code": "NPR",
+"name": "Nepalese rupee",
+"symbol": "₨",
+"usdRate": 154.927014
+},
+{
+"code": "NZD",
+"name": "New Zealand dollar",
+"symbol": "$",
+"usdRate": 1.782233
+},
+{
+"code": "OMR",
+"name": "Omani rial",
+"symbol": "ر.ع.",
+"usdRate": 0.384497
+},
+{
+"code": "PAB",
+"name": "Panamanian balboa",
+"symbol": "B/.",
+"usdRate": 1
+},
+{
+"code": "PEN",
+"name": "Peruvian sol",
+"symbol": "S/.",
+"usdRate": 3.442249
+},
+{
+"code": "PGK",
+"name": "Papua New Guinean kina",
+"symbol": "K",
+"usdRate": 4.508961
+},
+{
+"code": "PHP",
+"name": "Philippine peso",
+"symbol": "₱",
+"usdRate": 62.872735
+},
+{
+"code": "PKR",
+"name": "Pakistani rupee",
+"symbol": "₨",
+"usdRate": 276.868026
+},
+{
+"code": "PLN",
+"name": "Polish złoty",
+"symbol": "zł",
+"usdRate": 3.911664
+},
+{
+"code": "PYG",
+"name": "Paraguayan guaraní",
+"symbol": "₲",
+"usdRate": 5817.559533
+},
+{
+"code": "QAR",
+"name": "Qatari riyal",
+"symbol": "ر.ق",
+"usdRate": 3.64
+},
+{
+"code": "RON",
+"name": "Romanian leu",
+"symbol": "lei",
+"usdRate": 4.768924
+},
+{
+"code": "RSD",
+"name": "Serbian dinar",
+"symbol": "дин.",
+"usdRate": 104.754814
+},
+{
+"code": "RUB",
+"name": "Russian ruble",
+"symbol": "₽",
+"usdRate": 84.994885
+},
+{
+"code": "RWF",
+"name": "Rwandan franc",
+"symbol": "Fr",
+"usdRate": 1478.474273
+},
+{
+"code": "SAR",
+"name": "Saudi riyal",
+"symbol": "ر.س",
+"usdRate": 3.75
+},
+{
+"code": "SBD",
+"name": "Solomon Islands dollar",
+"symbol": "$",
+"usdRate": 7.95628
+},
+{
+"code": "SCR",
+"name": "Seychellois rupee",
+"symbol": "₨",
+"usdRate": 14.618558
+},
+{
+"code": "SDG",
+"name": "Sudanese pound",
+"symbol": "PT",
+"usdRate": 508.524886
+},
+{
+"code": "SEK",
+"name": "Swedish krona",
+"symbol": "kr",
+"usdRate": 9.990571
+},
+{
+"code": "SGD",
+"name": "Singapore dollar",
+"symbol": "$",
+"usdRate": 1.280697
+},
+{
+"code": "SHP",
+"name": "Saint Helena pound",
+"symbol": "£",
+"usdRate": 0.755895
+},
+{
+"code": "SLE",
+"name": "Sierra Leonean leone",
+"symbol": "Le",
+"usdRate": 24.587682
+},
+{
+"code": "SOS",
+"name": "Somali shilling",
+"symbol": "Sh",
+"usdRate": 571.017509
+},
+{
+"code": "SRD",
+"name": "Surinamese dollar",
+"symbol": "$",
+"usdRate": 37.639597
+},
+{
+"code": "SSP",
+"name": "South Sudanese pound",
+"symbol": "£",
+"usdRate": 5863.490752
+},
+{
+"code": "STN",
+"name": "São Tomé and Príncipe dobra",
+"symbol": "Db",
+"usdRate": 21.864676
+},
+{
+"code": "SYP",
+"name": "Syrian pound",
+"symbol": "£",
+"usdRate": 121.740531
+},
+{
+"code": "SZL",
+"name": "Swazi lilangeni",
+"symbol": "L",
+"usdRate": 16.539875
+},
+{
+"code": "THB",
+"name": "Thai baht",
+"symbol": "฿",
+"usdRate": 33.5671
+},
+{
+"code": "TJS",
+"name": "Tajikistani somoni",
+"symbol": "ЅМ",
+"usdRate": 9.226548
+},
+{
+"code": "TMT",
+"name": "Turkmenistan manat",
+"symbol": "m",
+"usdRate": 3.499103
+},
+{
+"code": "TND",
+"name": "Tunisian dinar",
+"symbol": "د.ت",
+"usdRate": 3.005017
+},
+{
+"code": "TOP",
+"name": "Tongan paʻanga",
+"symbol": "T$",
+"usdRate": 2.385509
+},
+{
+"code": "TRY",
+"name": "Turkish lira",
+"symbol": "₺",
+"usdRate": 49.333088
+},
+{
+"code": "TTD",
+"name": "Trinidad and Tobago dollar",
+"symbol": "$",
+"usdRate": 6.77317
+},
+{
+"code": "TWD",
+"name": "New Taiwan dollar",
+"symbol": "$",
+"usdRate": 31.959582
+},
+{
+"code": "TZS",
+"name": "Tanzanian shilling",
+"symbol": "Sh",
+"usdRate": 2637.2554
+},
+{
+"code": "UAH",
+"name": "Ukrainian hryvnia",
+"symbol": "₴",
+"usdRate": 44.895432
+},
+{
+"code": "UGX",
+"name": "Ugandan shilling",
+"symbol": "Sh",
+"usdRate": 3994.071225
+},
+{
+"code": "USD",
+"name": "United States dollar",
+"symbol": "$",
+"usdRate": 1
+},
+{
+"code": "UYU",
+"name": "Uruguayan peso",
+"symbol": "$",
+"usdRate": 40.053467
+},
+{
+"code": "UZS",
+"name": "Uzbekistani soʻm",
+"symbol": "so'm",
+"usdRate": 11868.219906
+},
+{
+"code": "VES",
+"name": "Venezuelan bolívar soberano",
+"symbol": "Bs.S.",
+"usdRate": 876.7976
+},
+{
+"code": "VND",
+"name": "Vietnamese đồng",
+"symbol": "₫",
+"usdRate": 25855.721426
+},
+{
+"code": "VUV",
+"name": "Vanuatu vatu",
+"symbol": "Vt",
+"usdRate": 120.007201
+},
+{
+"code": "WST",
+"name": "Samoan tālā",
+"symbol": "T",
+"usdRate": 2.741556
+},
+{
+"code": "XAF",
+"name": "Central African CFA franc",
+"symbol": "Fr",
+"usdRate": 585.399478
+},
+{
+"code": "XCD",
+"name": "Eastern Caribbean dollar",
+"symbol": "$",
+"usdRate": 2.7
+},
+{
+"code": "XOF",
+"name": "West African CFA franc",
+"symbol": "Fr",
+"usdRate": 585.399478
+},
+{
+"code": "XPF",
+"name": "CFP franc",
+"symbol": "₣",
+"usdRate": 106.496143
+},
+{
+"code": "YER",
+"name": "Yemeni rial",
+"symbol": "﷼",
+"usdRate": 235.966082
+},
+{
+"code": "ZAR",
+"name": "South African rand",
+"symbol": "R",
+"usdRate": 16.539966
+},
+{
+"code": "ZMW",
+"name": "Zambian kwacha",
+"symbol": "ZK",
+"usdRate": 19.865809
+}
+]

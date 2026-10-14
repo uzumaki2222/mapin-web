@@ -1,0 +1,1954 @@
+[
+{
+"id": "AF",
+"name": "Afghanistan",
+"flag": "🇦🇫",
+"currency": "AFN",
+"currencyName": "Afghan afghani",
+"currencySymbol": "؋"
+},
+{
+"id": "AL",
+"name": "Albania",
+"flag": "🇦🇱",
+"currency": "ALL",
+"currencyName": "Albanian lek",
+"currencySymbol": "L"
+},
+{
+"id": "DZ",
+"name": "Algeria",
+"flag": "🇩🇿",
+"currency": "DZD",
+"currencyName": "Algerian dinar",
+"currencySymbol": "د.ج"
+},
+{
+"id": "AS",
+"name": "American Samoa",
+"flag": "🇦🇸",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "AD",
+"name": "Andorra",
+"flag": "🇦🇩",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "AO",
+"name": "Angola",
+"flag": "🇦🇴",
+"currency": "AOA",
+"currencyName": "Angolan kwanza",
+"currencySymbol": "Kz"
+},
+{
+"id": "AI",
+"name": "Anguilla",
+"flag": "🇦🇮",
+"currency": "XCD",
+"currencyName": "Eastern Caribbean dollar",
+"currencySymbol": "$"
+},
+{
+"id": "AG",
+"name": "Antigua and Barbuda",
+"flag": "🇦🇬",
+"currency": "XCD",
+"currencyName": "Eastern Caribbean dollar",
+"currencySymbol": "$"
+},
+{
+"id": "AR",
+"name": "Argentina",
+"flag": "🇦🇷",
+"currency": "ARS",
+"currencyName": "Argentine peso",
+"currencySymbol": "$"
+},
+{
+"id": "AM",
+"name": "Armenia",
+"flag": "🇦🇲",
+"currency": "AMD",
+"currencyName": "Armenian dram",
+"currencySymbol": "֏"
+},
+{
+"id": "AW",
+"name": "Aruba",
+"flag": "🇦🇼",
+"currency": "AWG",
+"currencyName": "Aruban florin",
+"currencySymbol": "ƒ"
+},
+{
+"id": "AU",
+"name": "Australia",
+"flag": "🇦🇺",
+"currency": "AUD",
+"currencyName": "Australian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "AT",
+"name": "Austria",
+"flag": "🇦🇹",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "AZ",
+"name": "Azerbaijan",
+"flag": "🇦🇿",
+"currency": "AZN",
+"currencyName": "Azerbaijani manat",
+"currencySymbol": "₼"
+},
+{
+"id": "BS",
+"name": "Bahamas",
+"flag": "🇧🇸",
+"currency": "BSD",
+"currencyName": "Bahamian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "BH",
+"name": "Bahrain",
+"flag": "🇧🇭",
+"currency": "BHD",
+"currencyName": "Bahraini dinar",
+"currencySymbol": ".د.ب"
+},
+{
+"id": "BD",
+"name": "Bangladesh",
+"flag": "🇧🇩",
+"currency": "BDT",
+"currencyName": "Bangladeshi taka",
+"currencySymbol": "৳"
+},
+{
+"id": "BB",
+"name": "Barbados",
+"flag": "🇧🇧",
+"currency": "BBD",
+"currencyName": "Barbadian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "BY",
+"name": "Belarus",
+"flag": "🇧🇾",
+"currency": "BYN",
+"currencyName": "Belarusian ruble",
+"currencySymbol": "Br"
+},
+{
+"id": "BE",
+"name": "Belgium",
+"flag": "🇧🇪",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "BZ",
+"name": "Belize",
+"flag": "🇧🇿",
+"currency": "BZD",
+"currencyName": "Belize dollar",
+"currencySymbol": "$"
+},
+{
+"id": "BJ",
+"name": "Benin",
+"flag": "🇧🇯",
+"currency": "XOF",
+"currencyName": "West African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "BM",
+"name": "Bermuda",
+"flag": "🇧🇲",
+"currency": "BMD",
+"currencyName": "Bermudian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "BT",
+"name": "Bhutan",
+"flag": "🇧🇹",
+"currency": "BTN",
+"currencyName": "Bhutanese ngultrum",
+"currencySymbol": "Nu."
+},
+{
+"id": "BO",
+"name": "Bolivia",
+"flag": "🇧🇴",
+"currency": "BOB",
+"currencyName": "Bolivian boliviano",
+"currencySymbol": "Bs."
+},
+{
+"id": "BA",
+"name": "Bosnia and Herzegovina",
+"flag": "🇧🇦",
+"currency": "BAM",
+"currencyName": "Bosnia and Herzegovina convertible mark",
+"currencySymbol": "KM"
+},
+{
+"id": "BW",
+"name": "Botswana",
+"flag": "🇧🇼",
+"currency": "BWP",
+"currencyName": "Botswana pula",
+"currencySymbol": "P"
+},
+{
+"id": "BR",
+"name": "Brazil",
+"flag": "🇧🇷",
+"currency": "BRL",
+"currencyName": "Brazilian real",
+"currencySymbol": "R$"
+},
+{
+"id": "IO",
+"name": "British Indian Ocean Territory",
+"flag": "🇮🇴",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "VG",
+"name": "British Virgin Islands",
+"flag": "🇻🇬",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "BN",
+"name": "Brunei",
+"flag": "🇧🇳",
+"currency": "BND",
+"currencyName": "Brunei dollar",
+"currencySymbol": "$"
+},
+{
+"id": "BG",
+"name": "Bulgaria",
+"flag": "🇧🇬",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "BF",
+"name": "Burkina Faso",
+"flag": "🇧🇫",
+"currency": "XOF",
+"currencyName": "West African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "BI",
+"name": "Burundi",
+"flag": "🇧🇮",
+"currency": "BIF",
+"currencyName": "Burundian franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "KH",
+"name": "Cambodia",
+"flag": "🇰🇭",
+"currency": "KHR",
+"currencyName": "Cambodian riel",
+"currencySymbol": "៛"
+},
+{
+"id": "CM",
+"name": "Cameroon",
+"flag": "🇨🇲",
+"currency": "XAF",
+"currencyName": "Central African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "CA",
+"name": "Canada",
+"flag": "🇨🇦",
+"currency": "CAD",
+"currencyName": "Canadian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "CV",
+"name": "Cape Verde",
+"flag": "🇨🇻",
+"currency": "CVE",
+"currencyName": "Cape Verdean escudo",
+"currencySymbol": "Esc"
+},
+{
+"id": "BQ",
+"name": "Caribbean Netherlands",
+"flag": "",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "KY",
+"name": "Cayman Islands",
+"flag": "🇰🇾",
+"currency": "KYD",
+"currencyName": "Cayman Islands dollar",
+"currencySymbol": "$"
+},
+{
+"id": "CF",
+"name": "Central African Republic",
+"flag": "🇨🇫",
+"currency": "XAF",
+"currencyName": "Central African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "TD",
+"name": "Chad",
+"flag": "🇹🇩",
+"currency": "XAF",
+"currencyName": "Central African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "CL",
+"name": "Chile",
+"flag": "🇨🇱",
+"currency": "CLP",
+"currencyName": "Chilean peso",
+"currencySymbol": "$"
+},
+{
+"id": "CN",
+"name": "China",
+"flag": "🇨🇳",
+"currency": "CNY",
+"currencyName": "Chinese yuan",
+"currencySymbol": "¥"
+},
+{
+"id": "CX",
+"name": "Christmas Island",
+"flag": "🇨🇽",
+"currency": "AUD",
+"currencyName": "Australian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "CC",
+"name": "Cocos (Keeling) Islands",
+"flag": "🇨🇨",
+"currency": "AUD",
+"currencyName": "Australian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "CO",
+"name": "Colombia",
+"flag": "🇨🇴",
+"currency": "COP",
+"currencyName": "Colombian peso",
+"currencySymbol": "$"
+},
+{
+"id": "KM",
+"name": "Comoros",
+"flag": "🇰🇲",
+"currency": "KMF",
+"currencyName": "Comorian franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "CG",
+"name": "Congo",
+"flag": "🇨🇬",
+"currency": "XAF",
+"currencyName": "Central African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "CK",
+"name": "Cook Islands",
+"flag": "🇨🇰",
+"currency": "NZD",
+"currencyName": "New Zealand dollar",
+"currencySymbol": "$"
+},
+{
+"id": "CR",
+"name": "Costa Rica",
+"flag": "🇨🇷",
+"currency": "CRC",
+"currencyName": "Costa Rican colón",
+"currencySymbol": "₡"
+},
+{
+"id": "HR",
+"name": "Croatia",
+"flag": "🇭🇷",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "CU",
+"name": "Cuba",
+"flag": "🇨🇺",
+"currency": "CUP",
+"currencyName": "Cuban peso",
+"currencySymbol": "$"
+},
+{
+"id": "CW",
+"name": "Curaçao",
+"flag": "🇨🇼",
+"currency": "ANG",
+"currencyName": "Netherlands Antillean guilder",
+"currencySymbol": "ƒ"
+},
+{
+"id": "CY",
+"name": "Cyprus",
+"flag": "🇨🇾",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "CZ",
+"name": "Czechia",
+"flag": "🇨🇿",
+"currency": "CZK",
+"currencyName": "Czech koruna",
+"currencySymbol": "Kč"
+},
+{
+"id": "CD",
+"name": "DR Congo",
+"flag": "🇨🇩",
+"currency": "CDF",
+"currencyName": "Congolese franc",
+"currencySymbol": "FC"
+},
+{
+"id": "DK",
+"name": "Denmark",
+"flag": "🇩🇰",
+"currency": "DKK",
+"currencyName": "Danish krone",
+"currencySymbol": "kr"
+},
+{
+"id": "DJ",
+"name": "Djibouti",
+"flag": "🇩🇯",
+"currency": "DJF",
+"currencyName": "Djiboutian franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "DM",
+"name": "Dominica",
+"flag": "🇩🇲",
+"currency": "XCD",
+"currencyName": "Eastern Caribbean dollar",
+"currencySymbol": "$"
+},
+{
+"id": "DO",
+"name": "Dominican Republic",
+"flag": "🇩🇴",
+"currency": "DOP",
+"currencyName": "Dominican peso",
+"currencySymbol": "$"
+},
+{
+"id": "EC",
+"name": "Ecuador",
+"flag": "🇪🇨",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "EG",
+"name": "Egypt",
+"flag": "🇪🇬",
+"currency": "EGP",
+"currencyName": "Egyptian pound",
+"currencySymbol": "£"
+},
+{
+"id": "SV",
+"name": "El Salvador",
+"flag": "🇸🇻",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "GQ",
+"name": "Equatorial Guinea",
+"flag": "🇬🇶",
+"currency": "XAF",
+"currencyName": "Central African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "ER",
+"name": "Eritrea",
+"flag": "🇪🇷",
+"currency": "ERN",
+"currencyName": "Eritrean nakfa",
+"currencySymbol": "Nfk"
+},
+{
+"id": "EE",
+"name": "Estonia",
+"flag": "🇪🇪",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "SZ",
+"name": "Eswatini",
+"flag": "🇸🇿",
+"currency": "SZL",
+"currencyName": "Swazi lilangeni",
+"currencySymbol": "L"
+},
+{
+"id": "ET",
+"name": "Ethiopia",
+"flag": "🇪🇹",
+"currency": "ETB",
+"currencyName": "Ethiopian birr",
+"currencySymbol": "Br"
+},
+{
+"id": "FK",
+"name": "Falkland Islands",
+"flag": "🇫🇰",
+"currency": "FKP",
+"currencyName": "Falkland Islands pound",
+"currencySymbol": "£"
+},
+{
+"id": "FO",
+"name": "Faroe Islands",
+"flag": "🇫🇴",
+"currency": "DKK",
+"currencyName": "Danish krone",
+"currencySymbol": "kr"
+},
+{
+"id": "FJ",
+"name": "Fiji",
+"flag": "🇫🇯",
+"currency": "FJD",
+"currencyName": "Fijian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "FI",
+"name": "Finland",
+"flag": "🇫🇮",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "FR",
+"name": "France",
+"flag": "🇫🇷",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "GF",
+"name": "French Guiana",
+"flag": "🇬🇫",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "PF",
+"name": "French Polynesia",
+"flag": "🇵🇫",
+"currency": "XPF",
+"currencyName": "CFP franc",
+"currencySymbol": "₣"
+},
+{
+"id": "TF",
+"name": "French Southern and Antarctic Lands",
+"flag": "🇹🇫",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "GA",
+"name": "Gabon",
+"flag": "🇬🇦",
+"currency": "XAF",
+"currencyName": "Central African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "GM",
+"name": "Gambia",
+"flag": "🇬🇲",
+"currency": "GMD",
+"currencyName": "dalasi",
+"currencySymbol": "D"
+},
+{
+"id": "GE",
+"name": "Georgia",
+"flag": "🇬🇪",
+"currency": "GEL",
+"currencyName": "lari",
+"currencySymbol": "₾"
+},
+{
+"id": "DE",
+"name": "Germany",
+"flag": "🇩🇪",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "GH",
+"name": "Ghana",
+"flag": "🇬🇭",
+"currency": "GHS",
+"currencyName": "Ghanaian cedi",
+"currencySymbol": "₵"
+},
+{
+"id": "GI",
+"name": "Gibraltar",
+"flag": "🇬🇮",
+"currency": "GIP",
+"currencyName": "Gibraltar pound",
+"currencySymbol": "£"
+},
+{
+"id": "GR",
+"name": "Greece",
+"flag": "🇬🇷",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "GL",
+"name": "Greenland",
+"flag": "🇬🇱",
+"currency": "DKK",
+"currencyName": "krone",
+"currencySymbol": "kr."
+},
+{
+"id": "GD",
+"name": "Grenada",
+"flag": "🇬🇩",
+"currency": "XCD",
+"currencyName": "Eastern Caribbean dollar",
+"currencySymbol": "$"
+},
+{
+"id": "GP",
+"name": "Guadeloupe",
+"flag": "🇬🇵",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "GU",
+"name": "Guam",
+"flag": "🇬🇺",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "GT",
+"name": "Guatemala",
+"flag": "🇬🇹",
+"currency": "GTQ",
+"currencyName": "Guatemalan quetzal",
+"currencySymbol": "Q"
+},
+{
+"id": "GG",
+"name": "Guernsey",
+"flag": "🇬🇬",
+"currency": "GBP",
+"currencyName": "British pound",
+"currencySymbol": "£"
+},
+{
+"id": "GN",
+"name": "Guinea",
+"flag": "🇬🇳",
+"currency": "GNF",
+"currencyName": "Guinean franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "GW",
+"name": "Guinea-Bissau",
+"flag": "🇬🇼",
+"currency": "XOF",
+"currencyName": "West African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "GY",
+"name": "Guyana",
+"flag": "🇬🇾",
+"currency": "GYD",
+"currencyName": "Guyanese dollar",
+"currencySymbol": "$"
+},
+{
+"id": "HT",
+"name": "Haiti",
+"flag": "🇭🇹",
+"currency": "HTG",
+"currencyName": "Haitian gourde",
+"currencySymbol": "G"
+},
+{
+"id": "HN",
+"name": "Honduras",
+"flag": "🇭🇳",
+"currency": "HNL",
+"currencyName": "Honduran lempira",
+"currencySymbol": "L"
+},
+{
+"id": "HK",
+"name": "Hong Kong",
+"flag": "🇭🇰",
+"currency": "HKD",
+"currencyName": "Hong Kong dollar",
+"currencySymbol": "$"
+},
+{
+"id": "HU",
+"name": "Hungary",
+"flag": "🇭🇺",
+"currency": "HUF",
+"currencyName": "Hungarian forint",
+"currencySymbol": "Ft"
+},
+{
+"id": "IS",
+"name": "Iceland",
+"flag": "🇮🇸",
+"currency": "ISK",
+"currencyName": "Icelandic króna",
+"currencySymbol": "kr"
+},
+{
+"id": "IN",
+"name": "India",
+"flag": "🇮🇳",
+"currency": "INR",
+"currencyName": "Indian rupee",
+"currencySymbol": "₹"
+},
+{
+"id": "ID",
+"name": "Indonesia",
+"flag": "🇮🇩",
+"currency": "IDR",
+"currencyName": "Indonesian rupiah",
+"currencySymbol": "Rp"
+},
+{
+"id": "IR",
+"name": "Iran",
+"flag": "🇮🇷",
+"currency": "IRR",
+"currencyName": "Iranian rial",
+"currencySymbol": "﷼"
+},
+{
+"id": "IQ",
+"name": "Iraq",
+"flag": "🇮🇶",
+"currency": "IQD",
+"currencyName": "Iraqi dinar",
+"currencySymbol": "ع.د"
+},
+{
+"id": "IE",
+"name": "Ireland",
+"flag": "🇮🇪",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "IM",
+"name": "Isle of Man",
+"flag": "🇮🇲",
+"currency": "GBP",
+"currencyName": "British pound",
+"currencySymbol": "£"
+},
+{
+"id": "IL",
+"name": "Israel",
+"flag": "🇮🇱",
+"currency": "ILS",
+"currencyName": "Israeli new shekel",
+"currencySymbol": "₪"
+},
+{
+"id": "IT",
+"name": "Italy",
+"flag": "🇮🇹",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "CI",
+"name": "Ivory Coast",
+"flag": "🇨🇮",
+"currency": "XOF",
+"currencyName": "West African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "JM",
+"name": "Jamaica",
+"flag": "🇯🇲",
+"currency": "JMD",
+"currencyName": "Jamaican dollar",
+"currencySymbol": "$"
+},
+{
+"id": "JP",
+"name": "Japan",
+"flag": "🇯🇵",
+"currency": "JPY",
+"currencyName": "Japanese yen",
+"currencySymbol": "¥"
+},
+{
+"id": "JE",
+"name": "Jersey",
+"flag": "🇯🇪",
+"currency": "GBP",
+"currencyName": "British pound",
+"currencySymbol": "£"
+},
+{
+"id": "JO",
+"name": "Jordan",
+"flag": "🇯🇴",
+"currency": "JOD",
+"currencyName": "Jordanian dinar",
+"currencySymbol": "د.ا"
+},
+{
+"id": "KZ",
+"name": "Kazakhstan",
+"flag": "🇰🇿",
+"currency": "KZT",
+"currencyName": "Kazakhstani tenge",
+"currencySymbol": "₸"
+},
+{
+"id": "KE",
+"name": "Kenya",
+"flag": "🇰🇪",
+"currency": "KES",
+"currencyName": "Kenyan shilling",
+"currencySymbol": "Sh"
+},
+{
+"id": "KI",
+"name": "Kiribati",
+"flag": "🇰🇮",
+"currency": "AUD",
+"currencyName": "Australian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "KW",
+"name": "Kuwait",
+"flag": "🇰🇼",
+"currency": "KWD",
+"currencyName": "Kuwaiti dinar",
+"currencySymbol": "د.ك"
+},
+{
+"id": "KG",
+"name": "Kyrgyzstan",
+"flag": "🇰🇬",
+"currency": "KGS",
+"currencyName": "Kyrgyzstani som",
+"currencySymbol": "с"
+},
+{
+"id": "LA",
+"name": "Laos",
+"flag": "🇱🇦",
+"currency": "LAK",
+"currencyName": "Lao kip",
+"currencySymbol": "₭"
+},
+{
+"id": "LV",
+"name": "Latvia",
+"flag": "🇱🇻",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "LB",
+"name": "Lebanon",
+"flag": "🇱🇧",
+"currency": "LBP",
+"currencyName": "Lebanese pound",
+"currencySymbol": "ل.ل"
+},
+{
+"id": "LS",
+"name": "Lesotho",
+"flag": "🇱🇸",
+"currency": "LSL",
+"currencyName": "Lesotho loti",
+"currencySymbol": "L"
+},
+{
+"id": "LR",
+"name": "Liberia",
+"flag": "🇱🇷",
+"currency": "LRD",
+"currencyName": "Liberian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "LY",
+"name": "Libya",
+"flag": "🇱🇾",
+"currency": "LYD",
+"currencyName": "Libyan dinar",
+"currencySymbol": "ل.د"
+},
+{
+"id": "LI",
+"name": "Liechtenstein",
+"flag": "🇱🇮",
+"currency": "CHF",
+"currencyName": "Swiss franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "LT",
+"name": "Lithuania",
+"flag": "🇱🇹",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "LU",
+"name": "Luxembourg",
+"flag": "🇱🇺",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "MO",
+"name": "Macau",
+"flag": "🇲🇴",
+"currency": "MOP",
+"currencyName": "Macanese pataca",
+"currencySymbol": "P"
+},
+{
+"id": "MG",
+"name": "Madagascar",
+"flag": "🇲🇬",
+"currency": "MGA",
+"currencyName": "Malagasy ariary",
+"currencySymbol": "Ar"
+},
+{
+"id": "MW",
+"name": "Malawi",
+"flag": "🇲🇼",
+"currency": "MWK",
+"currencyName": "Malawian kwacha",
+"currencySymbol": "MK"
+},
+{
+"id": "MY",
+"name": "Malaysia",
+"flag": "🇲🇾",
+"currency": "MYR",
+"currencyName": "Malaysian ringgit",
+"currencySymbol": "RM"
+},
+{
+"id": "MV",
+"name": "Maldives",
+"flag": "🇲🇻",
+"currency": "MVR",
+"currencyName": "Maldivian rufiyaa",
+"currencySymbol": ".ރ"
+},
+{
+"id": "ML",
+"name": "Mali",
+"flag": "🇲🇱",
+"currency": "XOF",
+"currencyName": "West African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "MT",
+"name": "Malta",
+"flag": "🇲🇹",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "MH",
+"name": "Marshall Islands",
+"flag": "🇲🇭",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "MQ",
+"name": "Martinique",
+"flag": "🇲🇶",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "MR",
+"name": "Mauritania",
+"flag": "🇲🇷",
+"currency": "MRU",
+"currencyName": "Mauritanian ouguiya",
+"currencySymbol": "UM"
+},
+{
+"id": "MU",
+"name": "Mauritius",
+"flag": "🇲🇺",
+"currency": "MUR",
+"currencyName": "Mauritian rupee",
+"currencySymbol": "₨"
+},
+{
+"id": "YT",
+"name": "Mayotte",
+"flag": "🇾🇹",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "MX",
+"name": "Mexico",
+"flag": "🇲🇽",
+"currency": "MXN",
+"currencyName": "Mexican peso",
+"currencySymbol": "$"
+},
+{
+"id": "MD",
+"name": "Moldova",
+"flag": "🇲🇩",
+"currency": "MDL",
+"currencyName": "Moldovan leu",
+"currencySymbol": "L"
+},
+{
+"id": "MC",
+"name": "Monaco",
+"flag": "🇲🇨",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "MN",
+"name": "Mongolia",
+"flag": "🇲🇳",
+"currency": "MNT",
+"currencyName": "Mongolian tögrög",
+"currencySymbol": "₮"
+},
+{
+"id": "ME",
+"name": "Montenegro",
+"flag": "🇲🇪",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "MS",
+"name": "Montserrat",
+"flag": "🇲🇸",
+"currency": "XCD",
+"currencyName": "Eastern Caribbean dollar",
+"currencySymbol": "$"
+},
+{
+"id": "MA",
+"name": "Morocco",
+"flag": "🇲🇦",
+"currency": "MAD",
+"currencyName": "Moroccan dirham",
+"currencySymbol": "د.م."
+},
+{
+"id": "MZ",
+"name": "Mozambique",
+"flag": "🇲🇿",
+"currency": "MZN",
+"currencyName": "Mozambican metical",
+"currencySymbol": "MT"
+},
+{
+"id": "MM",
+"name": "Myanmar",
+"flag": "🇲🇲",
+"currency": "MMK",
+"currencyName": "Burmese kyat",
+"currencySymbol": "Ks"
+},
+{
+"id": "NA",
+"name": "Namibia",
+"flag": "🇳🇦",
+"currency": "NAD",
+"currencyName": "Namibian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "NR",
+"name": "Nauru",
+"flag": "🇳🇷",
+"currency": "AUD",
+"currencyName": "Australian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "NP",
+"name": "Nepal",
+"flag": "🇳🇵",
+"currency": "NPR",
+"currencyName": "Nepalese rupee",
+"currencySymbol": "₨"
+},
+{
+"id": "NL",
+"name": "Netherlands",
+"flag": "🇳🇱",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "NC",
+"name": "New Caledonia",
+"flag": "🇳🇨",
+"currency": "XPF",
+"currencyName": "CFP franc",
+"currencySymbol": "₣"
+},
+{
+"id": "NZ",
+"name": "New Zealand",
+"flag": "🇳🇿",
+"currency": "NZD",
+"currencyName": "New Zealand dollar",
+"currencySymbol": "$"
+},
+{
+"id": "NI",
+"name": "Nicaragua",
+"flag": "🇳🇮",
+"currency": "NIO",
+"currencyName": "Nicaraguan córdoba",
+"currencySymbol": "C$"
+},
+{
+"id": "NE",
+"name": "Niger",
+"flag": "🇳🇪",
+"currency": "XOF",
+"currencyName": "West African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "NG",
+"name": "Nigeria",
+"flag": "🇳🇬",
+"currency": "NGN",
+"currencyName": "Nigerian naira",
+"currencySymbol": "₦"
+},
+{
+"id": "NU",
+"name": "Niue",
+"flag": "🇳🇺",
+"currency": "NZD",
+"currencyName": "New Zealand dollar",
+"currencySymbol": "$"
+},
+{
+"id": "NF",
+"name": "Norfolk Island",
+"flag": "🇳🇫",
+"currency": "AUD",
+"currencyName": "Australian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "MK",
+"name": "North Macedonia",
+"flag": "🇲🇰",
+"currency": "MKD",
+"currencyName": "denar",
+"currencySymbol": "den"
+},
+{
+"id": "MP",
+"name": "Northern Mariana Islands",
+"flag": "🇲🇵",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "NO",
+"name": "Norway",
+"flag": "🇳🇴",
+"currency": "NOK",
+"currencyName": "Norwegian krone",
+"currencySymbol": "kr"
+},
+{
+"id": "OM",
+"name": "Oman",
+"flag": "🇴🇲",
+"currency": "OMR",
+"currencyName": "Omani rial",
+"currencySymbol": "ر.ع."
+},
+{
+"id": "PK",
+"name": "Pakistan",
+"flag": "🇵🇰",
+"currency": "PKR",
+"currencyName": "Pakistani rupee",
+"currencySymbol": "₨"
+},
+{
+"id": "PW",
+"name": "Palau",
+"flag": "🇵🇼",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "PS",
+"name": "Palestine",
+"flag": "🇵🇸",
+"currency": "EGP",
+"currencyName": "Egyptian pound",
+"currencySymbol": "E£"
+},
+{
+"id": "PA",
+"name": "Panama",
+"flag": "🇵🇦",
+"currency": "PAB",
+"currencyName": "Panamanian balboa",
+"currencySymbol": "B/."
+},
+{
+"id": "PG",
+"name": "Papua New Guinea",
+"flag": "🇵🇬",
+"currency": "PGK",
+"currencyName": "Papua New Guinean kina",
+"currencySymbol": "K"
+},
+{
+"id": "PY",
+"name": "Paraguay",
+"flag": "🇵🇾",
+"currency": "PYG",
+"currencyName": "Paraguayan guaraní",
+"currencySymbol": "₲"
+},
+{
+"id": "PE",
+"name": "Peru",
+"flag": "🇵🇪",
+"currency": "PEN",
+"currencyName": "Peruvian sol",
+"currencySymbol": "S/."
+},
+{
+"id": "PH",
+"name": "Philippines",
+"flag": "🇵🇭",
+"currency": "PHP",
+"currencyName": "Philippine peso",
+"currencySymbol": "₱"
+},
+{
+"id": "PN",
+"name": "Pitcairn Islands",
+"flag": "🇵🇳",
+"currency": "NZD",
+"currencyName": "New Zealand dollar",
+"currencySymbol": "$"
+},
+{
+"id": "PL",
+"name": "Poland",
+"flag": "🇵🇱",
+"currency": "PLN",
+"currencyName": "Polish złoty",
+"currencySymbol": "zł"
+},
+{
+"id": "PT",
+"name": "Portugal",
+"flag": "🇵🇹",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "PR",
+"name": "Puerto Rico",
+"flag": "🇵🇷",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "QA",
+"name": "Qatar",
+"flag": "🇶🇦",
+"currency": "QAR",
+"currencyName": "Qatari riyal",
+"currencySymbol": "ر.ق"
+},
+{
+"id": "RO",
+"name": "Romania",
+"flag": "🇷🇴",
+"currency": "RON",
+"currencyName": "Romanian leu",
+"currencySymbol": "lei"
+},
+{
+"id": "RU",
+"name": "Russia",
+"flag": "🇷🇺",
+"currency": "RUB",
+"currencyName": "Russian ruble",
+"currencySymbol": "₽"
+},
+{
+"id": "RW",
+"name": "Rwanda",
+"flag": "🇷🇼",
+"currency": "RWF",
+"currencyName": "Rwandan franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "RE",
+"name": "Réunion",
+"flag": "🇷🇪",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "BL",
+"name": "Saint Barthélemy",
+"flag": "🇧🇱",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "SH",
+"name": "Saint Helena, Ascension and Tristan da Cunha",
+"flag": "🇸🇭",
+"currency": "GBP",
+"currencyName": "Pound sterling",
+"currencySymbol": "£"
+},
+{
+"id": "KN",
+"name": "Saint Kitts and Nevis",
+"flag": "🇰🇳",
+"currency": "XCD",
+"currencyName": "Eastern Caribbean dollar",
+"currencySymbol": "$"
+},
+{
+"id": "LC",
+"name": "Saint Lucia",
+"flag": "🇱🇨",
+"currency": "XCD",
+"currencyName": "Eastern Caribbean dollar",
+"currencySymbol": "$"
+},
+{
+"id": "MF",
+"name": "Saint Martin",
+"flag": "🇲🇫",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "PM",
+"name": "Saint Pierre and Miquelon",
+"flag": "🇵🇲",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "VC",
+"name": "Saint Vincent and the Grenadines",
+"flag": "🇻🇨",
+"currency": "XCD",
+"currencyName": "Eastern Caribbean dollar",
+"currencySymbol": "$"
+},
+{
+"id": "WS",
+"name": "Samoa",
+"flag": "🇼🇸",
+"currency": "WST",
+"currencyName": "Samoan tālā",
+"currencySymbol": "T"
+},
+{
+"id": "SM",
+"name": "San Marino",
+"flag": "🇸🇲",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "SA",
+"name": "Saudi Arabia",
+"flag": "🇸🇦",
+"currency": "SAR",
+"currencyName": "Saudi riyal",
+"currencySymbol": "ر.س"
+},
+{
+"id": "SN",
+"name": "Senegal",
+"flag": "🇸🇳",
+"currency": "XOF",
+"currencyName": "West African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "RS",
+"name": "Serbia",
+"flag": "🇷🇸",
+"currency": "RSD",
+"currencyName": "Serbian dinar",
+"currencySymbol": "дин."
+},
+{
+"id": "SC",
+"name": "Seychelles",
+"flag": "🇸🇨",
+"currency": "SCR",
+"currencyName": "Seychellois rupee",
+"currencySymbol": "₨"
+},
+{
+"id": "SL",
+"name": "Sierra Leone",
+"flag": "🇸🇱",
+"currency": "SLE",
+"currencyName": "Sierra Leonean leone",
+"currencySymbol": "Le"
+},
+{
+"id": "SG",
+"name": "Singapore",
+"flag": "🇸🇬",
+"currency": "SGD",
+"currencyName": "Singapore dollar",
+"currencySymbol": "$"
+},
+{
+"id": "SX",
+"name": "Sint Maarten",
+"flag": "🇸🇽",
+"currency": "ANG",
+"currencyName": "Netherlands Antillean guilder",
+"currencySymbol": "ƒ"
+},
+{
+"id": "SK",
+"name": "Slovakia",
+"flag": "🇸🇰",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "SI",
+"name": "Slovenia",
+"flag": "🇸🇮",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "SB",
+"name": "Solomon Islands",
+"flag": "🇸🇧",
+"currency": "SBD",
+"currencyName": "Solomon Islands dollar",
+"currencySymbol": "$"
+},
+{
+"id": "SO",
+"name": "Somalia",
+"flag": "🇸🇴",
+"currency": "SOS",
+"currencyName": "Somali shilling",
+"currencySymbol": "Sh"
+},
+{
+"id": "ZA",
+"name": "South Africa",
+"flag": "🇿🇦",
+"currency": "ZAR",
+"currencyName": "South African rand",
+"currencySymbol": "R"
+},
+{
+"id": "GS",
+"name": "South Georgia",
+"flag": "🇬🇸",
+"currency": "SHP",
+"currencyName": "Saint Helena pound",
+"currencySymbol": "£"
+},
+{
+"id": "KR",
+"name": "South Korea",
+"flag": "🇰🇷",
+"currency": "KRW",
+"currencyName": "South Korean won",
+"currencySymbol": "₩"
+},
+{
+"id": "SS",
+"name": "South Sudan",
+"flag": "🇸🇸",
+"currency": "SSP",
+"currencyName": "South Sudanese pound",
+"currencySymbol": "£"
+},
+{
+"id": "ES",
+"name": "Spain",
+"flag": "🇪🇸",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "LK",
+"name": "Sri Lanka",
+"flag": "🇱🇰",
+"currency": "LKR",
+"currencyName": "Sri Lankan rupee",
+"currencySymbol": "Rs රු"
+},
+{
+"id": "SD",
+"name": "Sudan",
+"flag": "🇸🇩",
+"currency": "SDG",
+"currencyName": "Sudanese pound",
+"currencySymbol": "PT"
+},
+{
+"id": "SR",
+"name": "Suriname",
+"flag": "🇸🇷",
+"currency": "SRD",
+"currencyName": "Surinamese dollar",
+"currencySymbol": "$"
+},
+{
+"id": "SJ",
+"name": "Svalbard and Jan Mayen",
+"flag": "🇸🇯",
+"currency": "NOK",
+"currencyName": "krone",
+"currencySymbol": "kr"
+},
+{
+"id": "SE",
+"name": "Sweden",
+"flag": "🇸🇪",
+"currency": "SEK",
+"currencyName": "Swedish krona",
+"currencySymbol": "kr"
+},
+{
+"id": "CH",
+"name": "Switzerland",
+"flag": "🇨🇭",
+"currency": "CHF",
+"currencyName": "Swiss franc",
+"currencySymbol": "Fr."
+},
+{
+"id": "SY",
+"name": "Syria",
+"flag": "🇸🇾",
+"currency": "SYP",
+"currencyName": "Syrian pound",
+"currencySymbol": "£"
+},
+{
+"id": "ST",
+"name": "São Tomé and Príncipe",
+"flag": "🇸🇹",
+"currency": "STN",
+"currencyName": "São Tomé and Príncipe dobra",
+"currencySymbol": "Db"
+},
+{
+"id": "TW",
+"name": "Taiwan",
+"flag": "🇹🇼",
+"currency": "TWD",
+"currencyName": "New Taiwan dollar",
+"currencySymbol": "$"
+},
+{
+"id": "TJ",
+"name": "Tajikistan",
+"flag": "🇹🇯",
+"currency": "TJS",
+"currencyName": "Tajikistani somoni",
+"currencySymbol": "ЅМ"
+},
+{
+"id": "TZ",
+"name": "Tanzania",
+"flag": "🇹🇿",
+"currency": "TZS",
+"currencyName": "Tanzanian shilling",
+"currencySymbol": "Sh"
+},
+{
+"id": "TH",
+"name": "Thailand",
+"flag": "🇹🇭",
+"currency": "THB",
+"currencyName": "Thai baht",
+"currencySymbol": "฿"
+},
+{
+"id": "TL",
+"name": "Timor-Leste",
+"flag": "🇹🇱",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "TG",
+"name": "Togo",
+"flag": "🇹🇬",
+"currency": "XOF",
+"currencyName": "West African CFA franc",
+"currencySymbol": "Fr"
+},
+{
+"id": "TK",
+"name": "Tokelau",
+"flag": "🇹🇰",
+"currency": "NZD",
+"currencyName": "New Zealand dollar",
+"currencySymbol": "$"
+},
+{
+"id": "TO",
+"name": "Tonga",
+"flag": "🇹🇴",
+"currency": "TOP",
+"currencyName": "Tongan paʻanga",
+"currencySymbol": "T$"
+},
+{
+"id": "TT",
+"name": "Trinidad and Tobago",
+"flag": "🇹🇹",
+"currency": "TTD",
+"currencyName": "Trinidad and Tobago dollar",
+"currencySymbol": "$"
+},
+{
+"id": "TN",
+"name": "Tunisia",
+"flag": "🇹🇳",
+"currency": "TND",
+"currencyName": "Tunisian dinar",
+"currencySymbol": "د.ت"
+},
+{
+"id": "TM",
+"name": "Turkmenistan",
+"flag": "🇹🇲",
+"currency": "TMT",
+"currencyName": "Turkmenistan manat",
+"currencySymbol": "m"
+},
+{
+"id": "TC",
+"name": "Turks and Caicos Islands",
+"flag": "🇹🇨",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "TV",
+"name": "Tuvalu",
+"flag": "🇹🇻",
+"currency": "AUD",
+"currencyName": "Australian dollar",
+"currencySymbol": "$"
+},
+{
+"id": "TR",
+"name": "Türkiye",
+"flag": "🇹🇷",
+"currency": "TRY",
+"currencyName": "Turkish lira",
+"currencySymbol": "₺"
+},
+{
+"id": "UG",
+"name": "Uganda",
+"flag": "🇺🇬",
+"currency": "UGX",
+"currencyName": "Ugandan shilling",
+"currencySymbol": "Sh"
+},
+{
+"id": "UA",
+"name": "Ukraine",
+"flag": "🇺🇦",
+"currency": "UAH",
+"currencyName": "Ukrainian hryvnia",
+"currencySymbol": "₴"
+},
+{
+"id": "AE",
+"name": "United Arab Emirates",
+"flag": "🇦🇪",
+"currency": "AED",
+"currencyName": "United Arab Emirates dirham",
+"currencySymbol": "د.إ"
+},
+{
+"id": "GB",
+"name": "United Kingdom",
+"flag": "🇬🇧",
+"currency": "GBP",
+"currencyName": "British pound",
+"currencySymbol": "£"
+},
+{
+"id": "US",
+"name": "United States",
+"flag": "🇺🇸",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "UM",
+"name": "United States Minor Outlying Islands",
+"flag": "🇺🇲",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "VI",
+"name": "United States Virgin Islands",
+"flag": "🇻🇮",
+"currency": "USD",
+"currencyName": "United States dollar",
+"currencySymbol": "$"
+},
+{
+"id": "UY",
+"name": "Uruguay",
+"flag": "🇺🇾",
+"currency": "UYU",
+"currencyName": "Uruguayan peso",
+"currencySymbol": "$"
+},
+{
+"id": "UZ",
+"name": "Uzbekistan",
+"flag": "🇺🇿",
+"currency": "UZS",
+"currencyName": "Uzbekistani soʻm",
+"currencySymbol": "so'm"
+},
+{
+"id": "VU",
+"name": "Vanuatu",
+"flag": "🇻🇺",
+"currency": "VUV",
+"currencyName": "Vanuatu vatu",
+"currencySymbol": "Vt"
+},
+{
+"id": "VA",
+"name": "Vatican City",
+"flag": "🇻🇦",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+},
+{
+"id": "VE",
+"name": "Venezuela",
+"flag": "🇻🇪",
+"currency": "VES",
+"currencyName": "Venezuelan bolívar soberano",
+"currencySymbol": "Bs.S."
+},
+{
+"id": "VN",
+"name": "Vietnam",
+"flag": "🇻🇳",
+"currency": "VND",
+"currencyName": "Vietnamese đồng",
+"currencySymbol": "₫"
+},
+{
+"id": "WF",
+"name": "Wallis and Futuna",
+"flag": "🇼🇫",
+"currency": "XPF",
+"currencyName": "CFP franc",
+"currencySymbol": "₣"
+},
+{
+"id": "EH",
+"name": "Western Sahara",
+"flag": "🇪🇭",
+"currency": "DZD",
+"currencyName": "Algerian dinar",
+"currencySymbol": "دج"
+},
+{
+"id": "YE",
+"name": "Yemen",
+"flag": "🇾🇪",
+"currency": "YER",
+"currencyName": "Yemeni rial",
+"currencySymbol": "﷼"
+},
+{
+"id": "ZM",
+"name": "Zambia",
+"flag": "🇿🇲",
+"currency": "ZMW",
+"currencyName": "Zambian kwacha",
+"currencySymbol": "ZK"
+},
+{
+"id": "ZW",
+"name": "Zimbabwe",
+"flag": "🇿🇼",
+"currency": "BWP",
+"currencyName": "Botswana pula",
+"currencySymbol": "P"
+},
+{
+"id": "AX",
+"name": "Åland Islands",
+"flag": "🇦🇽",
+"currency": "EUR",
+"currencyName": "Euro",
+"currencySymbol": "€"
+}
+]
