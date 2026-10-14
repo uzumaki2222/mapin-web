@@ -1,15 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useEthUsd, useMapinState } from "@/components/countries/useMapin";
-import { Flag, LaunchForm, PLACE, PLACES, Stats, TradeBox, num, tickerFor, titleCase } from "@/components/countries/shared";
+import { Flag, LaunchForm, PLACE, PLACES, Stats, TokenCard, TradeBox, num, titleCase } from "@/components/countries/shared";
 import { MAPIN_LAUNCHPAD } from "@/lib/contracts/mapin-abi";
 import { Notice } from "@/components/ui/Notice";
 
 export function CountryPage({ id }: { id: string }) {
+  const router = useRouter();
   const place = PLACE.get(id);
   const state = useMapinState();
   const ethUsd = useEthUsd().data ?? null;
+  const [showCurrencyTrade, setShowCurrencyTrade] = useState(false);
 
   if (!place) {
     return (
@@ -21,10 +25,8 @@ export function CountryPage({ id }: { id: string }) {
   }
 
   const currency = state.data?.currencies.get(place.currency);
-  const country = state.data?.countries.get(place.id);
+  const tokens = state.data?.byPlace.get(place.id) ?? [];
   const siblings = PLACES.filter((p) => p.currency === place.currency && p.id !== place.id);
-  const curTicker = currency?.symbol ?? place.currency;
-  const ctyTicker = country?.symbol ?? tickerFor(place.name);
   const loading = state.isLoading && !state.data;
 
   return (
@@ -37,80 +39,75 @@ export function CountryPage({ id }: { id: string }) {
           <p className="mp-eyebrow">{place.currencyName} · {place.currency}{place.currencySymbol ? ` · ${place.currencySymbol}` : ""}</p>
           <h1>{place.name}</h1>
           <div className="mp-pairline">
-            <span className={`mp-pill ${country ? "on" : ""}`}>${ctyTicker}</span>
+            <span className="mp-pill">$YOUR&nbsp;TOKEN</span>
             <span className="mp-slash">/</span>
-            <span className={`mp-pill ${currency ? "on" : ""}`}>${curTicker}</span>
+            <span className={`mp-pill ${currency ? "on" : ""}`}>${currency?.symbol ?? place.currency}</span>
             <span className="mp-slash">/</span>
             <span className="mp-pill on">ETH</span>
           </div>
-          <p className="mp-fine">1 USD ≈ {num(place.perUsd)} {place.currency} (reference rate, display only)</p>
+          <p className="mp-fine">Every token launched on {place.name} is paired with the {place.currency} coin. {tokens.length ? `${tokens.length} live here.` : "None yet: be the first."}</p>
         </div>
       </header>
 
-      {!MAPIN_LAUNCHPAD ? <Notice tone="error" title="Contract not set">The launchpad address is missing from this deployment.</Notice> : null}
+      {!MAPIN_LAUNCHPAD ? <Notice tone="warn" title="Launches open shortly">The launchpad contract is being upgraded. Launching and trading switch on as soon as the new contract is live.</Notice> : null}
       {state.error ? <Notice tone="error" title="Could not read the chain">{(state.error as Error).message.slice(0, 200)}</Notice> : null}
 
-      {loading ? <div className="mp-empty">Reading Robinhood Chain…</div> : (
-        <div className="mp-cols">
-          {/* ---------------- step 1: currency coin */}
-          <section className={`mp-card ${currency ? "" : "mp-card-hot"}`}>
-            <div className="mp-card-head">
-              <span className="mp-step">1</span>
-              <div>
-                <h2>${curTicker} <small>/ ETH</small></h2>
-                <p>{titleCase(place.currencyName)} coin{siblings.length ? ` · shared with ${siblings.length} other ${siblings.length === 1 ? "country" : "countries"}` : ""}</p>
-              </div>
-              {currency ? <span className="mp-badge on">Live</span> : <span className="mp-badge">Not launched</span>}
+      <div className="mp-cols">
+        {/* ---------------- launch */}
+        <section className="mp-card mp-card-hot">
+          <div className="mp-card-head">
+            <span className="mp-step">+</span>
+            <div>
+              <h2>Launch a token on {place.name}</h2>
+              <p>Pick any name and ticker. It pairs with ${currency?.symbol ?? place.currency} automatically.</p>
             </div>
-            {currency ? (
-              <>
-                <Stats token={currency} place={place} ethUsd={ethUsd} />
-                <TradeBox token={currency} />
-              </>
-            ) : (
-              <>
-                <p className="mp-note">Nobody has launched the {place.currency} coin yet. Launch it and you earn the creator fee on every ${place.currency} trade, including the trades routed through it by every {place.currency} country.</p>
-                <LaunchForm kind="currency" place={place} />
-              </>
-            )}
-            <p className="mp-fine">A community meme coin themed on {place.currencyName}. Not a stablecoin, not pegged to the real currency.</p>
-          </section>
+          </div>
+          <LaunchForm kind="country" place={place} currencyLive={Boolean(currency)} onDone={(t) => t && router.push(`/t/${t}`)} />
+        </section>
 
-          {/* ---------------- step 2: country coin */}
-          <section className={`mp-card ${currency && !country ? "mp-card-hot" : ""}`}>
-            <div className="mp-card-head">
-              <span className="mp-step">2</span>
-              <div>
-                <h2>${ctyTicker} <small>/ ${curTicker}</small></h2>
-                <p>{place.name} coin</p>
-              </div>
-              {country ? <span className="mp-badge on">{country.graduated ? "Graduated" : "Live"}</span> : <span className="mp-badge">Not launched</span>}
+        {/* ---------------- currency coin */}
+        <section className="mp-card">
+          <div className="mp-card-head">
+            <span className="mp-step">$</span>
+            <div>
+              <h2>${currency?.symbol ?? place.currency} <small>/ ETH</small></h2>
+              <p>{titleCase(place.currencyName)} coin{siblings.length ? ` · shared by ${siblings.length + 1} countries` : ""}</p>
             </div>
-            {country ? (
-              <>
-                <Stats token={country} currency={currency} place={place} ethUsd={ethUsd} />
-                <TradeBox token={country} currency={currency} />
-              </>
-            ) : currency ? (
-              <>
-                <p className="mp-note">{place.name} has no coin yet. Launch ${ctyTicker} paired with ${curTicker} and earn the creator fee on every trade.</p>
-                <LaunchForm kind="country" place={place} />
-              </>
-            ) : (
-              <div className="mp-locked">
-                <b>Launch ${place.currency} first</b>
-                <p>${ctyTicker} trades against ${place.currency}. As soon as step 1 is live, this unlocks.</p>
-              </div>
-            )}
-          </section>
+            {currency ? <span className="mp-badge on">Live</span> : <span className="mp-badge">Not launched</span>}
+          </div>
+          {currency ? (
+            <>
+              <Stats token={currency} place={place} ethUsd={ethUsd} />
+              {showCurrencyTrade ? <TradeBox token={currency} /> : <button type="button" className="btn btn-block" onClick={() => setShowCurrencyTrade(true)}>Trade ${currency.symbol}</button>}
+            </>
+          ) : (
+            <p className="mp-note">The {place.currency} coin is created automatically with the first token launched on any {place.currency} country. Its creator earns a fee on every trade routed through it.</p>
+          )}
+          <p className="mp-fine">A community coin themed on {place.currencyName}. Not a stablecoin and not pegged to the real currency. 1 USD ≈ {num(place.perUsd)} {place.currency} (reference only).</p>
+        </section>
+      </div>
+
+      <section className="mp-section">
+        <div className="mp-section-head">
+          <div>
+            <p className="mp-eyebrow">Tokens on {place.name}</p>
+            <h2>{tokens.length ? `${tokens.length} token${tokens.length > 1 ? "s" : ""}, newest first` : "No tokens yet"}</h2>
+          </div>
         </div>
-      )}
+        {loading ? <div className="mp-empty">Reading Robinhood Chain…</div> : tokens.length ? (
+          <div className="mp-tgrid">
+            {tokens.map((t) => <TokenCard key={t.address} token={t} quoteSymbol={`$${currency?.symbol ?? place.currency}`} ethUsd={ethUsd} />)}
+          </div>
+        ) : (
+          <div className="mp-empty"><b>{place.name} is wide open.</b> Launch the first token above and it shows up here and on the map.</div>
+        )}
+      </section>
 
       {siblings.length ? (
         <section className="mp-section mp-siblings">
-          <p className="mp-eyebrow">Also on ${curTicker}</p>
+          <p className="mp-eyebrow">Also paired with ${currency?.symbol ?? place.currency}</p>
           <div className="mp-sib-list">
-            {siblings.slice(0, 24).map((p) => (
+            {siblings.slice(0, 30).map((p) => (
               <Link key={p.id} href={`/c/${p.id}`} className="mp-tile"><Flag id={p.id} size={22} /><b>{p.name}</b></Link>
             ))}
           </div>

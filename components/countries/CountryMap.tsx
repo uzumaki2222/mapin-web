@@ -56,6 +56,8 @@ export function CountryMap({ status, onSelect, onHover }: Props) {
           container: box.current,
           style: {
             version: 8,
+            // Glyphs only draw the country names; if they fail to load, the map still works without labels.
+            glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
             sources: {},
             layers: [{ id: "ocean", type: "background", paint: { "background-color": MAP_FILL.ocean } }],
           },
@@ -106,6 +108,31 @@ export function CountryMap({ status, onSelect, onHover }: Props) {
             source: "countries",
             paint: { "line-color": MAP_FILL.line, "line-width": 0.7 },
           });
+          // country names: big countries first, smaller ones appear as you zoom in
+          map.addSource("labels", { type: "geojson", data: "/world-labels.geo.json" });
+          const label = (id: string, cls: number, minzoom: number, size: [number, number]) =>
+            map!.addLayer({
+              id,
+              type: "symbol",
+              source: "labels",
+              minzoom,
+              filter: ["==", ["get", "c"], cls],
+              layout: {
+                "text-field": ["get", "n"],
+                "text-font": ["Noto Sans Bold"],
+                "text-size": ["interpolate", ["linear"], ["zoom"], 0, size[0], 6, size[1]],
+                "text-transform": "uppercase",
+                "text-letter-spacing": 0.06,
+                "text-max-width": 8,
+                "text-padding": 4,
+                "symbol-sort-key": ["-", 0, ["get", "a"]],
+              },
+              paint: { "text-color": "#e9e5da", "text-halo-color": "rgba(13,17,21,0.9)", "text-halo-width": 1.4, "text-opacity": 0.92 },
+            });
+          label("labels-1", 1, 0.6, [9, 20]);
+          label("labels-2", 2, 1.8, [9, 17]);
+          label("labels-3", 3, 2.8, [9, 15]);
+          label("labels-4", 4, 3.8, [9, 13]);
           let hovered: string | null = null;
           const clear = () => {
             if (hovered) map!.setFeatureState({ source: "countries", id: hovered }, { hover: false });

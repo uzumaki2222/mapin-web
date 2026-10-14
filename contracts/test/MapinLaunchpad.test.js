@@ -17,6 +17,7 @@ async function fixture() {
 const params = (key, symbol, extra = {}) => ({
   key: b32(key), name: extra.name || symbol, symbol, metadataURI: "", creatorFeeBps: extra.fee ?? 50, minMidOut: 0, minTokensOut: 0,
 });
+const cty = (key, symbol, extra = {}) => [params(key, symbol, extra), extra.curName ?? "", extra.curSymbol ?? ""];
 async function launched(lp, tx, event) {
   const rc = await tx.wait();
   const ev = rc.logs.map((l) => { try { return lp.interface.parseLog(l); } catch { return null; } }).find((e) => e?.name === event);
@@ -27,31 +28,34 @@ const dl = async () => (await time.latest()) + 600;
 describe("MapinLaunchpad", () => {
   it("country needs its currency first, then pairs with it", async () => {
     const { lp, alice, bob } = await loadFixture(fixture);
-    await expect(lp.connect(alice).launchCountry(params("DZ", "ALGERIA"))).to.be.revertedWithCustomError(lp, "CurrencyNotLaunched");
+    await expect(lp.connect(alice).launchCountry(...cty("DZ", "ALGERIA"))).to.be.revertedWithCustomError(lp, "CurrencyNotLaunched");
     const dzd = await launched(lp, await lp.connect(alice).launchCurrency(params("DZD", "DZD")), "CurrencyLaunched");
-    const dz = await launched(lp, await lp.connect(bob).launchCountry(params("DZ", "ALGERIA")), "CountryLaunched");
+    const dz = await launched(lp, await lp.connect(bob).launchCountry(...cty("DZ", "ALGERIA")), "CountryLaunched");
     expect(await dz.quoteToken()).to.equal(await dzd.getAddress());
     expect(await lp.currencyToken(b32("DZD"))).to.equal(await dzd.getAddress());
-    expect(await lp.tokenByPlace(b32("DZ"))).to.equal(await dz.getAddress());
+    expect(await lp.placeTokens(b32("DZ"))).to.deep.equal([await dz.getAddress()]);
   });
 
   it("France and Germany share the EUR currency token; one token per place/currency", async () => {
     const { lp, alice, bob } = await loadFixture(fixture);
     const eur = await launched(lp, await lp.connect(alice).launchCurrency(params("EUR", "EURO")), "CurrencyLaunched");
-    const fr = await launched(lp, await lp.connect(alice).launchCountry(params("FR", "FRANCE")), "CountryLaunched");
-    const de = await launched(lp, await lp.connect(bob).launchCountry(params("DE", "GERMANY")), "CountryLaunched");
+    const fr = await launched(lp, await lp.connect(alice).launchCountry(...cty("FR", "FRANCE")), "CountryLaunched");
+    const de = await launched(lp, await lp.connect(bob).launchCountry(...cty("DE", "GERMANY")), "CountryLaunched");
     expect(await fr.quoteToken()).to.equal(await eur.getAddress());
     expect(await de.quoteToken()).to.equal(await eur.getAddress());
     await expect(lp.connect(bob).launchCurrency(params("EUR", "EUR2"))).to.be.revertedWithCustomError(lp, "AlreadyLaunched");
-    await expect(lp.connect(bob).launchCountry(params("FR", "FR2"))).to.be.revertedWithCustomError(lp, "AlreadyLaunched");
+    const fr2 = await launched(lp, await lp.connect(bob).launchCountry(...cty("FR", "CROISSANT", { name: "Croissant Coin" })), "CountryLaunched");
+    expect(await fr2.quoteToken()).to.equal(await eur.getAddress());
+    expect(await fr2.name()).to.equal("Croissant Coin");
+    expect((await lp.placeTokens(b32("FR"))).length).to.equal(2);
     await expect(lp.connect(bob).launchCurrency(params("XYZ", "XYZ"))).to.be.revertedWithCustomError(lp, "UnknownCurrency");
-    await expect(lp.connect(bob).launchCountry(params("ZZ", "ZZ"))).to.be.revertedWithCustomError(lp, "UnknownPlace");
+    await expect(lp.connect(bob).launchCountry(...cty("ZZ", "ZZ"))).to.be.revertedWithCustomError(lp, "UnknownPlace");
   });
 
   it("buyWithETH on a country routes through its currency, matches preview", async () => {
     const { lp, alice, bob } = await loadFixture(fixture);
     await lp.connect(alice).launchCurrency(params("MYR", "MYR"));
-    const my = await launched(lp, await lp.connect(alice).launchCountry(params("MY", "MALAYSIA")), "CountryLaunched");
+    const my = await launched(lp, await lp.connect(alice).launchCountry(...cty("MY", "MALAYSIA")), "CountryLaunched");
     const addr = await my.getAddress();
     const [mid, out] = await lp.previewBuyWithETH(addr, E(0.05));
     expect(mid).to.be.gt(0);
@@ -62,7 +66,7 @@ describe("MapinLaunchpad", () => {
   it("sellForETH returns ETH, round trip loses only fees", async () => {
     const { lp, alice, bob } = await loadFixture(fixture);
     await lp.connect(alice).launchCurrency(params("MYR", "MYR", { fee: 0 }));
-    const my = await launched(lp, await lp.connect(alice).launchCountry(params("MY", "MALAYSIA", { fee: 0 })), "CountryLaunched");
+    const my = await launched(lp, await lp.connect(alice).launchCountry(...cty("MY", "MALAYSIA", { fee: 0 })), "CountryLaunched");
     const addr = await my.getAddress();
     await lp.connect(bob).buyWithETH(addr, 0, 0, await dl(), { value: E(0.2) });
     const bal = await my.balanceOf(bob.address);
@@ -90,7 +94,7 @@ describe("MapinLaunchpad", () => {
   it("direct buy/sell with the quote token works", async () => {
     const { lp, alice, bob } = await loadFixture(fixture);
     const dzd = await launched(lp, await lp.connect(alice).launchCurrency(params("DZD", "DZD")), "CurrencyLaunched");
-    const dz = await launched(lp, await lp.connect(alice).launchCountry(params("DZ", "ALGERIA")), "CountryLaunched");
+    const dz = await launched(lp, await lp.connect(alice).launchCountry(...cty("DZ", "ALGERIA")), "CountryLaunched");
     await lp.connect(bob).buyWithETH(await dzd.getAddress(), 0, 0, await dl(), { value: E(0.5) });
     const cur = await dzd.balanceOf(bob.address);
     await dzd.connect(bob).approve(await lp.getAddress(), cur);
@@ -123,22 +127,22 @@ describe("MapinLaunchpad", () => {
   it("launch with ETH initial buy, and map snapshot", async () => {
     const { lp, alice, bob } = await loadFixture(fixture);
     await lp.connect(alice).launchCurrency(params("EUR", "EURO"), { value: E(0.1) });
-    const fr = await launched(lp, await lp.connect(bob).launchCountry(params("FR", "FRANCE"), { value: E(0.05) }), "CountryLaunched");
+    const fr = await launched(lp, await lp.connect(bob).launchCountry(...cty("FR", "FRANCE"), { value: E(0.05) }), "CountryLaunched");
     expect(await fr.balanceOf(bob.address)).to.be.gt(0);
-    const [tokens, keys, prices, progress] = await lp.getMapState(2, 0, 100);
-    expect(tokens.length).to.equal(1);
-    expect(ethers.decodeBytes32String(keys[0])).to.equal("FR");
-    expect(prices[0]).to.be.gt(0);
-    expect(progress[0]).to.be.gt(0);
-    const [c1] = await lp.getMapState(1, 0, 100);
-    expect(c1.length).to.equal(1);
+    const list = await lp.getTokens(2, 0, 100);
+    expect(list.length).to.equal(1);
+    expect(ethers.decodeBytes32String(list[0].key)).to.equal("FR");
+    expect(list[0].priceEth).to.be.gt(0);
+    expect(list[0].progressBps).to.be.gt(0);
+    expect(list[0].creator).to.equal(bob.address);
+    expect(await lp.getTokens(1, 0, 100)).to.have.length(1);
   });
 
   it("solvency: launchpad holds the quote it owes", async () => {
     const { lp, weth, alice, bob } = await loadFixture(fixture);
     const eur = await launched(lp, await lp.connect(alice).launchCurrency(params("EUR", "EURO")), "CurrencyLaunched");
-    const fr = await launched(lp, await lp.connect(alice).launchCountry(params("FR", "FRANCE")), "CountryLaunched");
-    const de = await launched(lp, await lp.connect(bob).launchCountry(params("DE", "GERMANY")), "CountryLaunched");
+    const fr = await launched(lp, await lp.connect(alice).launchCountry(...cty("FR", "FRANCE")), "CountryLaunched");
+    const de = await launched(lp, await lp.connect(bob).launchCountry(...cty("DE", "GERMANY")), "CountryLaunched");
     for (let i = 0; i < 4; i++) {
       await lp.connect(bob).buyWithETH(await fr.getAddress(), 0, 0, await dl(), { value: E(0.03 + i / 100) });
       await lp.connect(alice).buyWithETH(await de.getAddress(), 0, 0, await dl(), { value: E(0.02 + i / 100) });
@@ -153,5 +157,22 @@ describe("MapinLaunchpad", () => {
     const unsold = CURVE_SUPPLY - ce.tokensSold;
     expect(await eur.balanceOf(lpAddr)).to.be.gte(owedEur + unsold + E(200_000_000));
     expect(await ethers.provider.getBalance(lpAddr)).to.equal(0);
+  });
+
+  it("launching a country auto-launches its currency coin when names are given", async () => {
+    const { lp, alice, bob } = await loadFixture(fixture);
+    const tx = await lp.connect(alice).launchCountry(params("MY", "DURIAN", { name: "Durian Republic" }), "Malaysian Ringgit", "MYR", { value: E(0.02) });
+    const rc = await tx.wait();
+    const evs = rc.logs.map((l) => { try { return lp.interface.parseLog(l); } catch { return null; } }).filter(Boolean);
+    const cur = evs.find((e) => e.name === "CurrencyLaunched");
+    const cty = evs.find((e) => e.name === "CountryLaunched");
+    expect(cur.args.code).to.equal(b32("MYR"));
+    expect(cty.args.quote).to.equal(cur.args.token);
+    expect(await lp.currencyToken(b32("MYR"))).to.equal(cur.args.token);
+    const t = await ethers.getContractAt("LaunchToken", cty.args.token);
+    expect(await t.balanceOf(alice.address)).to.be.gt(0);
+    // second token on Malaysia reuses the same currency coin, names ignored
+    const t2 = await launched(lp, await lp.connect(bob).launchCountry(params("MY", "KL"), "x", "y"), "CountryLaunched");
+    expect(await t2.quoteToken()).to.equal(cur.args.token);
   });
 });

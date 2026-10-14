@@ -74,7 +74,7 @@ contract MapinLaunchpad is Ownable2Step, ReentrancyGuard, Pausable {
     mapping(bytes32 => bool) public knownCurrency; // "DZD" => true
     mapping(bytes32 => address) public currencyToken; // "DZD" => $DZD token
     mapping(bytes32 => bytes32) public placeCurrency; // "DZ" => "DZD"
-    mapping(bytes32 => address) public tokenByPlace; // "DZ" => $ALGERIA token
+    mapping(bytes32 => address[]) private _placeTokens; // "DZ" => every token launched on Algeria
     address[] private _currencies;
     address[] private _countries;
 
@@ -178,38 +178,61 @@ contract MapinLaunchpad is Ownable2Step, ReentrancyGuard, Pausable {
     function launchCurrency(LaunchParams calldata p) external payable nonReentrant whenNotPaused returns (address token) {
         if (!knownCurrency[p.key]) revert UnknownCurrency();
         if (currencyToken[p.key] != address(0)) revert AlreadyLaunched();
-        token = _newCurve(p, KIND_CURRENCY, address(weth), currencyVirtualEth);
+        token = _newCurve(p.key, p.name, p.symbol, p.metadataURI, p.creatorFeeBps, KIND_CURRENCY, address(weth), currencyVirtualEth);
         currencyToken[p.key] = token;
         _currencies.push(token);
         emit CurrencyLaunched(token, msg.sender, p.key, p.name, p.symbol, p.metadataURI, p.creatorFeeBps);
         if (msg.value > 0) _buyWithEth(token, msg.value, 0, p.minTokensOut, msg.sender);
     }
 
-    /// @notice Launch the token for a country, paired with its national currency token.
-    ///         Send ETH to buy some at launch (routed ETH -> currency -> country).
-    function launchCountry(LaunchParams calldata p) external payable nonReentrant whenNotPaused returns (address token) {
+    /// @notice Launch any token (free name and ticker) on a country. It is paired with that
+    ///         country's currency coin. Any number of tokens can be launched per country.
+    ///         If the currency coin does not exist yet it is launched first in the same transaction,
+    ///         using `curName` / `curSymbol` (the caller becomes its creator too).
+    ///         Send ETH to buy some at launch (routed ETH -> currency -> token).
+    function launchCountry(LaunchParams calldata p, string calldata curName, string calldata curSymbol)
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        returns (address token)
+    {
         bytes32 cur = placeCurrency[p.key];
         if (cur == bytes32(0)) revert UnknownPlace();
-        if (tokenByPlace[p.key] != address(0)) revert AlreadyLaunched();
         address quote = currencyToken[cur];
-        if (quote == address(0)) revert CurrencyNotLaunched();
-        token = _newCurve(p, KIND_COUNTRY, quote, countryVirtualQuote);
-        tokenByPlace[p.key] = token;
+        if (quote == address(0)) {
+            if (bytes(curName).length == 0 || bytes(curSymbol).length == 0) revert CurrencyNotLaunched();
+            quote = _newCurve(cur, curName, curSymbol, "", p.creatorFeeBps, KIND_CURRENCY, address(weth), currencyVirtualEth);
+            currencyToken[cur] = quote;
+            _currencies.push(quote);
+            emit CurrencyLaunched(quote, msg.sender, cur, curName, curSymbol, "", p.creatorFeeBps);
+        }
+        token = _newCurve(p.key, p.name, p.symbol, p.metadataURI, p.creatorFeeBps, KIND_COUNTRY, quote, countryVirtualQuote);
+        _placeTokens[p.key].push(token);
         _countries.push(token);
         emit CountryLaunched(token, msg.sender, p.key, cur, quote, p.name, p.symbol, p.metadataURI, p.creatorFeeBps);
         if (msg.value > 0) _buyWithEth(token, msg.value, p.minMidOut, p.minTokensOut, msg.sender);
     }
 
-    function _newCurve(LaunchParams calldata p, uint8 kind, address quote, uint256 virtualQuote) internal returns (address token) {
-        if (bytes(p.name).length == 0 || bytes(p.symbol).length == 0) revert BadParam();
-        if (p.creatorFeeBps > MAX_CREATOR_FEE_BPS) revert BadParam();
-        token = address(new LaunchToken(p.name, p.symbol, TOTAL_SUPPLY, msg.sender, quote, p.metadataURI));
+    function _newCurve(
+        bytes32 key,
+        string memory name,
+        string memory symbol,
+        string memory metadataURI,
+        uint16 creatorFeeBps,
+        uint8 kind,
+        address quote,
+        uint256 virtualQuote
+    ) internal returns (address token) {
+        if (bytes(name).length == 0 || bytes(symbol).length == 0) revert BadParam();
+        if (creatorFeeBps > MAX_CREATOR_FEE_BPS) revert BadParam();
+        token = address(new LaunchToken(name, symbol, TOTAL_SUPPLY, msg.sender, quote, metadataURI));
         Curve storage c = curves[token];
         c.quote = quote;
         c.creator = msg.sender;
-        c.key = p.key;
+        c.key = key;
         c.kind = kind;
-        c.creatorFeeBps = p.creatorFeeBps;
+        c.creatorFeeBps = creatorFeeBps;
         c.createdAt = uint64(block.timestamp);
         c.virtualQuote = virtualQuote;
         c.virtualToken = INITIAL_VIRTUAL_TOKEN;
@@ -490,37 +513,44 @@ contract MapinLaunchpad is Ownable2Step, ReentrancyGuard, Pausable {
         return (_currencies.length, _countries.length);
     }
 
-    /// @notice Snapshot for the map. kind = KIND_CURRENCY or KIND_COUNTRY; oldest first.
-    function getMapState(uint8 kind, uint256 offset, uint256 limit)
-        external
-        view
-        returns (
-            address[] memory tokens,
-            bytes32[] memory keys,
-            uint256[] memory pricesEth,
-            uint256[] memory progressBps,
-            uint256[] memory realQuote,
-            bool[] memory graduated
-        )
-    {
-        address[] storage list = kind == KIND_CURRENCY ? _currencies : _countries;
-        uint256 n = list.length;
+    struct TokenView {
+        address token;
+        bytes32 key; // currency code or place id
+        address quote;
+        address creator;
+        uint64 createdAt;
+        uint16 creatorFeeBps;
+        bool graduated;
+        uint256 priceEth; // wei per 1e18 tokens
+        uint256 progressBps;
+        uint256 realQuote;
+    }
+
+    function _view(address t) internal view returns (TokenView memory v) {
+        Curve storage c = curves[t];
+        v.token = t;
+        v.key = c.key;
+        v.quote = c.quote;
+        v.creator = c.creator;
+        v.createdAt = c.createdAt;
+        v.creatorFeeBps = c.creatorFeeBps;
+        v.graduated = c.graduated;
+        v.priceEth = spotPriceEth(t);
+        v.progressBps = Math.mulDiv(c.tokensSold, BPS, CURVE_SUPPLY);
+        v.realQuote = c.realQuote;
+    }
+
+    /// @notice Every launched token of one kind (KIND_CURRENCY or KIND_COUNTRY), oldest first.
+    function getTokens(uint8 kind, uint256 offset, uint256 limit) external view returns (TokenView[] memory list) {
+        address[] storage src = kind == KIND_CURRENCY ? _currencies : _countries;
+        uint256 n = src.length;
         uint256 len = offset >= n ? 0 : Math.min(n - offset, limit);
-        tokens = new address[](len);
-        keys = new bytes32[](len);
-        pricesEth = new uint256[](len);
-        progressBps = new uint256[](len);
-        realQuote = new uint256[](len);
-        graduated = new bool[](len);
-        for (uint256 i; i < len; ++i) {
-            address t = list[offset + i];
-            Curve storage c = curves[t];
-            tokens[i] = t;
-            keys[i] = c.key;
-            pricesEth[i] = spotPriceEth(t);
-            progressBps[i] = Math.mulDiv(c.tokensSold, BPS, CURVE_SUPPLY);
-            realQuote[i] = c.realQuote;
-            graduated[i] = c.graduated;
-        }
+        list = new TokenView[](len);
+        for (uint256 i; i < len; ++i) list[i] = _view(src[offset + i]);
+    }
+
+    /// @notice Every token launched on one country, oldest first.
+    function placeTokens(bytes32 placeId) external view returns (address[] memory) {
+        return _placeTokens[placeId];
     }
 }

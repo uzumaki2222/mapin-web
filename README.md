@@ -6,11 +6,11 @@ Klik sebuah negara, lalu luncurkan dan perdagangkan tokennya. Setiap negara dipa
 
 | Lapisan | Contoh | Pair |
 |---|---|---|
-| Token mata uang | $DZD (Algerian Dinar), $MYR, $GBP, $EUR | dengan ETH |
-| Token negara | $ALGERIA, $MALAYSIA, $UK, $FRANCE | dengan token mata uangnya ($DZD, $MYR, $GBP, $EUR) |
+| Token mata uang | $DZD (Algerian Dinar), $MYR, $GBP, $EUR | dengan ETH (satu per mata uang) |
+| Token di negara | nama & ticker bebas, berapa pun jumlahnya per negara | dengan token mata uang negara itu ($DZD, $MYR, $GBP, $EUR) |
 
 - Token mata uang adalah **token bertema dengan harga pasar bebas**. Token ini bukan stablecoin dan nilainya tidak sama dengan mata uang aslinya.
-- Satu token per negara dan satu token per mata uang. Siapa pun boleh meluncurkan, dan peluncur pertama mendapat creator fee (0–1%) dari setiap transaksi.
+- Siapa pun bisa meluncurkan token dengan nama dan ticker bebas di negara mana pun, berapa pun jumlahnya. Kalau token mata uang negara itu belum ada, transaksi yang sama otomatis membuatnya. Setiap pembuat token mendapat creator fee (0–1%) dari setiap transaksi.
 - Pembeli cukup memakai ETH. Untuk token negara, `buyWithETH` dan `sellForETH` otomatis lewat dua curve (ETH ↔ $DZD ↔ $ALGERIA) dalam satu transaksi.
 - Supply setiap token 1 miliar. Sebanyak 80% dijual di bonding curve. Saat penuh, token lulus dan owner memindahkan dana serta 20% token cadangan ke pool DEX (`migrate`).
 - Biaya platform 1% per curve, ditambah creator fee.
