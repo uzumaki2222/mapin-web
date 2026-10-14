@@ -82,7 +82,7 @@ export function Stats({ token, currency, place, ethUsd }: { token: MapinToken; c
       <div><span className="mp-k">Market cap</span><b>{num(mcapEth)} ETH</b><small>{usd !== null ? `≈ $${num(usd)} · ${num(usd * place.perUsd)} ${place.currency}` : " "}</small></div>
       <div><span className="mp-k">Raised</span><b>{num(raised)} {token.kind === 2 && currency ? `$${currency.symbol}` : "ETH"}</b></div>
       <div className="mp-wide">
-        <div className="mp-row"><span className="mp-k">Bonding curve</span><span className="mono">{token.graduated ? "Graduated" : `${(token.progressBps / 100).toFixed(1)}%`}</span></div>
+        <div className="mp-row"><span className="mp-k">Bonding curve</span><span className="mono">{token.migrated ? "On Uniswap" : token.graduated ? "Graduated" : `${(token.progressBps / 100).toFixed(1)}%`}</span></div>
         <div className="mp-bar"><i style={{ width: `${Math.max(1, token.progressBps / 100)}%` }} /></div>
       </div>
       {token.meta ? <p className="mp-wide mp-meta">{token.meta}</p> : null}
@@ -174,7 +174,7 @@ export function TradeBox({ token, currency }: { token: MapinToken; currency?: Ma
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<Msg>(null);
 
-  const direct = isCountry && payWith === "currency";
+  const direct = isCountry && payWith === "currency" && !token.graduated;
   const quoteSym = direct && currency ? `$${currency.symbol}` : "ETH";
   const ethBal = useBalance({ address: tx.address, chainId: CHAIN_ID, query: { enabled: Boolean(tx.address) } });
   const tokBal = useReadContract({ address: token.address, abi: launchTokenAbi, functionName: "balanceOf", args: tx.address ? [tx.address] : undefined, chainId: CHAIN_ID, query: { enabled: Boolean(tx.address) } });
@@ -249,10 +249,13 @@ export function TradeBox({ token, currency }: { token: MapinToken; currency?: Ma
     setBusy(false);
   }
 
-  if (token.graduated) {
-    return <Notice tone="success" title="Graduated">The bonding curve is full. Trading continues in the DEX pool once liquidity is migrated.</Notice>;
+  // Curve full but liquidity not in the Uniswap pair yet (the automatic step failed): anyone can finish it.
+  if (token.graduated && !token.migrated) {
+    return <MigrateBox token={token} />;
   }
-  const ethRouteBlocked = isCountry && !direct && Boolean(currency?.graduated);
+  // Direct currency-coin trades use the curve only; after graduation everything routes with ETH through the pools.
+  const directAllowed = isCountry && Boolean(currency) && !token.graduated;
+  const ethRouteBlocked = !direct && isCountry && Boolean(currency?.graduated && !currency?.migrated);
   const maxIn = inBal ? (side === "buy" && !direct ? (inBal * 97n) / 100n : inBal) : 0n;
 
   return (
@@ -261,7 +264,8 @@ export function TradeBox({ token, currency }: { token: MapinToken; currency?: Ma
         <button type="button" className="b" aria-pressed={side === "buy"} onClick={() => { setSide("buy"); reset(); }}>Buy</button>
         <button type="button" className="s" aria-pressed={side === "sell"} onClick={() => { setSide("sell"); reset(); }}>Sell</button>
       </div>
-      {isCountry && currency ? (
+      {token.migrated ? <Notice tone="success" title="Graduated · trading on Uniswap">Buys and sells route with ETH through the Uniswap V2 pool ${token.symbol}/{isCountry ? `$${currency?.symbol ?? "?"}` : "WETH"}.</Notice> : null}
+      {directAllowed && currency ? (
         <div className="mp-chips" role="group" aria-label="Pay with">
           <span className="mp-k">{side === "buy" ? "Pay with" : "Receive"}</span>
           <button type="button" aria-pressed={payWith === "eth"} onClick={() => { setPayWith("eth"); reset(); }}>ETH</button>
@@ -281,7 +285,7 @@ export function TradeBox({ token, currency }: { token: MapinToken; currency?: Ma
         <b>{preview ? `${formatAmount(preview.out, 18, 6)} ${outSym}` : "–"}</b>
         {preview && preview.mid > 0n && currency ? <small>routed through {formatAmount(preview.mid, 18, 2)} ${currency.symbol}</small> : null}
       </div>
-      {ethRouteBlocked ? <Notice tone="warn">${currency!.symbol} has graduated, so the ETH route is closed. Pay with ${currency!.symbol} instead.</Notice> : null}
+      {ethRouteBlocked ? <Notice tone="warn">${currency!.symbol} just graduated; its Uniswap pool is being created. Pay with ${currency!.symbol} for now, or try again in a minute.</Notice> : null}
       {tx.address ? (
         <button type="button" className={`btn btn-lg btn-block ${side === "buy" ? "mp-buy" : "mp-sell"}`} disabled={busy || !preview || preview.out === 0n || ethRouteBlocked} onClick={() => void trade()}>
           {busy ? <span className="spinner" aria-hidden /> : null}{side === "buy" ? `Buy $${token.symbol}` : `Sell $${token.symbol}`}
@@ -324,7 +328,7 @@ export function TokenCard({ token, quoteSymbol, ethUsd }: { token: MapinToken; q
           <b>${token.symbol}</b>
           <span>{token.name}</span>
         </div>
-        {token.graduated ? <em className="mp-tag grad">Graduated</em> : isNew ? <em className="mp-tag new">New</em> : token.kind === 1 ? <em className="mp-tag cur">Currency</em> : null}
+        {token.migrated ? <em className="mp-tag grad">On Uniswap</em> : token.graduated ? <em className="mp-tag grad">Graduated</em> : isNew ? <em className="mp-tag new">New</em> : token.kind === 1 ? <em className="mp-tag cur">Currency</em> : null}
       </div>
       <div className="mp-tcard-pair">{token.kind === 2 ? `${place?.name ?? token.key} · ` : ""}${token.symbol} / {quoteSymbol}</div>
       <div className="mp-tcard-nums">
@@ -334,5 +338,34 @@ export function TokenCard({ token, quoteSymbol, ethUsd }: { token: MapinToken; q
       <div className="mp-bar"><i style={{ width: `${Math.max(1, token.progressBps / 100)}%` }} /></div>
       <div className="mp-tcard-foot"><span>{(token.progressBps / 100).toFixed(1)}% to graduation</span><span>fee {(token.creatorFeeBps / 100).toFixed(2)}%</span></div>
     </a>
+  );
+}
+
+// ---------------------------------------------------------------- graduation fallback
+function MigrateBox({ token }: { token: MapinToken }) {
+  const tx = useMapinTx();
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<Msg>(null);
+  async function go() {
+    setBusy(true);
+    setMsg({ tone: "info", text: "Confirm in your wallet…" });
+    try {
+      const r = await tx.send(MAPIN_LAUNCHPAD as Address, mapinAbi as Abi, "migrateToDex", [token.address], 0n, "Create pool");
+      setMsg({ tone: "success", text: "Liquidity is in the Uniswap pool. Trading is open.", hash: r.transactionHash });
+      await qc.invalidateQueries({ queryKey: ["mapin-state"] });
+    } catch (err) {
+      setMsg({ tone: "error", text: (err as Error).message });
+    }
+    setBusy(false);
+  }
+  return (
+    <div className="mp-trade">
+      <Notice tone="success" title="Graduated">The bonding curve sold out. One step left: move the liquidity into the Uniswap V2 pool. Anyone can do it; it costs only gas.</Notice>
+      {tx.address ? (
+        <button type="button" className="btn btn-yellow btn-lg btn-block" disabled={busy} onClick={() => void go()}>{busy ? <span className="spinner" aria-hidden /> : null}Create the Uniswap pool</button>
+      ) : <ConnectButton block />}
+      <Status msg={msg} />
+    </div>
   );
 }

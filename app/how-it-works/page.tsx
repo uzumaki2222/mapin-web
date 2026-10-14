@@ -7,13 +7,13 @@ const STEPS = [
   { n: "02", t: "Name your token", d: "Type any name and ticker you want. You are not limited to one token per country: anyone can launch as many tokens on a country as they like." },
   { n: "03", t: "It pairs with the currency coin", d: "Your token trades against that country's currency coin, for example $DZD. If the currency coin does not exist yet, your launch creates it in the same transaction and you become its creator too." },
   { n: "04", t: "People trade with ETH", d: "Buyers pay ETH. The contract swaps ETH into the currency coin, then into your token, in one transaction. Selling runs the same route backwards. Holders of the currency coin can also trade directly." },
-  { n: "05", t: "Graduate to the DEX", d: "Every token has a bonding curve: the price rises as people buy. When 80% of the supply (800M) is sold, the token graduates and its liquidity moves to a DEX pool." },
+  { n: "05", t: "Graduate to Uniswap", d: "Every token has a bonding curve: the price rises as people buy. When 80% of the supply (800M) is sold, the raised coins and 200M tokens go into the token's own Uniswap V2 pool, like UPIN/MYR, automatically. The LP is burned, so that liquidity is locked for good." },
 ];
 
 const FACTS = [
   ["Supply", "1,000,000,000 per token"],
   ["Sold on the curve", "800,000,000 (80%)"],
-  ["Kept for the DEX pool", "200,000,000 (20%)"],
+  ["Kept for the Uniswap pool", "200,000,000 (20%), added at graduation, LP burned"],
   ["Platform fee", "1% of every trade, per curve"],
   ["Creator fee", "0% to 1%, chosen at launch, paid to the creator on every trade"],
   ["Slippage guard", "3% default on the site, enforced by the contract"],

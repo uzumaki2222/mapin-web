@@ -6,7 +6,7 @@ const PK = process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY]
 module.exports = {
   solidity: {
     version: "0.8.24",
-    settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
+    settings: { optimizer: { enabled: true, runs: 1 }, viaIR: true },
   },
   networks: {
     robinhoodTestnet: {

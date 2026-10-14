@@ -21,6 +21,8 @@ export interface MapinToken {
   creator: Address;
   createdAt: number; // unix seconds
   creatorFeeBps: number;
+  pair: Address; // Uniswap V2 pair token/quote, created at launch
+  migrated: boolean; // liquidity is in the Uniswap pair
   priceEth: bigint; // wei per 1e18 tokens
   progressBps: number;
   realQuote: bigint;
@@ -60,7 +62,7 @@ async function readKind(pc: PublicClient, kind: 1 | 2): Promise<MapinToken[]> {
     for (const v of list) {
       out.push({
         address: v.token, key: fromB32(v.key), kind, ...meta.get(v.token)!,
-        quote: v.quote, creator: v.creator, createdAt: Number(v.createdAt), creatorFeeBps: Number(v.creatorFeeBps),
+        quote: v.quote, creator: v.creator, createdAt: Number(v.createdAt), creatorFeeBps: Number(v.creatorFeeBps), pair: v.pair, migrated: v.migrated,
         priceEth: v.priceEth, progressBps: Number(v.progressBps), realQuote: v.realQuote, graduated: v.graduated,
       });
     }

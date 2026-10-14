@@ -70,6 +70,10 @@ export function TokenPage({ address }: { address: string }) {
             <a className="mp-linkrow" href={explorerToken(token.quote)} target="_blank" rel="noreferrer">
               Quote: {isCountry ? `$${currency?.symbol ?? place?.currency} coin` : "WETH"} <span className="mono">{token.quote.slice(0, 8)}…{token.quote.slice(-6)}</span> ↗
             </a>
+            <a className="mp-linkrow" href={explorerAddress(token.pair)} target="_blank" rel="noreferrer">
+              Uniswap V2 pool {token.symbol}/{isCountry ? currency?.symbol ?? place?.currency : "WETH"} · {token.migrated ? "live" : "created, opens at graduation"} <span className="mono">{token.pair.slice(0, 8)}…{token.pair.slice(-6)}</span> ↗
+            </a>
+            <p className="mp-fine">When the curve sells out, the raised {isCountry ? `$${currency?.symbol ?? place?.currency}` : "ETH"} and 200M ${token.symbol} go into this pool automatically and the LP tokens are burned. DEX scanners and trading bots then list it as {token.symbol}/{isCountry ? currency?.symbol ?? place?.currency : "WETH"}.</p>
             {isCountry && currency ? (
               <Link className="mp-linkrow" href={`/t/${currency.address}`}>Trade the quote coin: <b>${currency.symbol}</b> ({currency.name}) →</Link>
             ) : null}

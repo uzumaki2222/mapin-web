@@ -5,6 +5,7 @@ import deployment from "@/lib/contracts/mapin-deployment.json";
 export const MAPIN_LAUNCHPAD = ((process.env.NEXT_PUBLIC_MAPIN_LAUNCHPAD || deployment.address || "") as string).toLowerCase() as Address | "";
 export const MAPIN_START_BLOCK = BigInt(deployment.startBlock || 0);
 export const MAPIN_WETH = deployment.weth as Address;
+export const MAPIN_V2_FACTORY = ((deployment as { v2Factory?: string }).v2Factory || "0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f") as Address;
 
 export const KIND_CURRENCY = 1;
 export const KIND_COUNTRY = 2;
@@ -25,8 +26,9 @@ export const mapinAbi = parseAbi([
   "function currencyToken(bytes32 code) view returns (address)",
   "function placeTokens(bytes32 placeId) view returns (address[])",
   "function feeBps() view returns (uint256)",
-  "function curves(address token) view returns (address quote, address creator, bytes32 key, uint8 kind, uint16 creatorFeeBps, uint64 createdAt, bool graduated, bool migrated, uint256 virtualQuote, uint256 virtualToken, uint256 realQuote, uint256 tokensSold)",
-  "struct TokenView { address token; bytes32 key; address quote; address creator; uint64 createdAt; uint16 creatorFeeBps; bool graduated; uint256 priceEth; uint256 progressBps; uint256 realQuote; }",
+  "function curves(address token) view returns (address quote, address creator, address pair, bytes32 key, uint8 kind, uint16 creatorFeeBps, uint64 createdAt, bool graduated, bool migrated, uint256 virtualQuote, uint256 virtualToken, uint256 realQuote, uint256 tokensSold)",
+  "struct TokenView { address token; bytes32 key; address quote; address creator; address pair; uint64 createdAt; uint16 creatorFeeBps; bool graduated; bool migrated; uint256 priceEth; uint256 progressBps; uint256 realQuote; }",
+  "function migrateToDex(address token)",
   "function getTokens(uint8 kind, uint256 offset, uint256 limit) view returns (TokenView[])",
   "event CurrencyLaunched(address indexed token, address indexed creator, bytes32 indexed code, string name, string symbol, string metadataURI, uint16 creatorFeeBps)",
   "event CountryLaunched(address indexed token, address indexed creator, bytes32 indexed placeId, bytes32 currency, address quote, string name, string symbol, string metadataURI, uint16 creatorFeeBps)",

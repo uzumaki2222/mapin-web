@@ -6,12 +6,14 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy:testnet": "hardhat run scripts/deploy.js --network robinhoodTestnet",
-    "deploy:mainnet": "hardhat run scripts/deploy.js --network robinhoodMainnet"
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network robinhoodMainnet",
+    "test:fork": "hardhat test fork/mainnet-fork.test.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/contracts": "5.1.0",
     "dotenv": "^16.4.5",
-    "hardhat": "^2.22.17"
+    "hardhat": "^2.22.17",
+    "@uniswap/v2-core": "1.0.1"
   }
 }

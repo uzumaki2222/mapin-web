@@ -5,6 +5,8 @@ const fs = require("fs");
 const path = require("path");
 
 const MAINNET_WETH = "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73";
+// Official Uniswap V2 factory on Robinhood Chain (developers.uniswap.org/deployments)
+const MAINNET_V2_FACTORY = "0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f";
 const b32 = (s) => hre.ethers.encodeBytes32String(s);
 const chunk = (a, n) => Array.from({ length: Math.ceil(a.length / n) }, (_, i) => a.slice(i * n, i * n + n));
 
@@ -25,8 +27,21 @@ async function main() {
     console.log(`Test WETH ${weth}`);
   }
 
+  let v2 = process.env.V2_FACTORY || (isMainnet ? MAINNET_V2_FACTORY : "");
+  if (!v2) {
+    const art = require("@uniswap/v2-core/build/UniswapV2Factory.json");
+    const bytecode = art.bytecode.startsWith("0x") ? art.bytecode : "0x" + art.bytecode;
+    const f = await new ethers.ContractFactory(art.abi, bytecode, deployer).deploy(deployer.address);
+    await f.waitForDeployment();
+    v2 = await f.getAddress();
+    console.log(`Test Uniswap V2 factory ${v2}`);
+  }
+
+  for (const [name, a] of [["WETH", weth], ["Uniswap V2 factory", v2]]) {
+    if ((await ethers.provider.getCode(a)) === "0x") throw new Error(`${name} ${a} has no code on ${network.name}`);
+  }
   const feeRecipient = process.env.FEE_RECIPIENT || deployer.address;
-  const lp = await (await ethers.getContractFactory("MapinLaunchpad")).deploy(deployer.address, feeRecipient, weth);
+  const lp = await (await ethers.getContractFactory("MapinLaunchpad")).deploy(deployer.address, feeRecipient, weth, v2);
   await lp.waitForDeployment();
   const address = await lp.getAddress();
   const startBlock = (await lp.deploymentTransaction().wait()).blockNumber;
@@ -38,7 +53,7 @@ async function main() {
   console.log(`Registered ${places.length} countries`);
 
   const chainId = Number((await ethers.provider.getNetwork()).chainId);
-  const out = { chainId, address, weth, startBlock };
+  const out = { chainId, address, weth, v2Factory: v2, startBlock };
   const target = path.join(__dirname, "../../lib/contracts/mapin-deployment.json");
   fs.writeFileSync(target, JSON.stringify(out, null, 2) + "\n");
   console.log(`Wrote ${path.relative(process.cwd(), target)} — commit it and redeploy the website.`);

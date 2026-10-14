@@ -2,5 +2,6 @@
   "chainId": 4663,
   "address": "",
   "weth": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+  "v2Factory": "0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f",
   "startBlock": 0
 }

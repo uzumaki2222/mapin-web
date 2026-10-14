@@ -12,7 +12,7 @@ Klik sebuah negara, lalu luncurkan dan perdagangkan tokennya. Setiap negara dipa
 - Token mata uang adalah **token bertema dengan harga pasar bebas**. Token ini bukan stablecoin dan nilainya tidak sama dengan mata uang aslinya.
 - Siapa pun bisa meluncurkan token dengan nama dan ticker bebas di negara mana pun, berapa pun jumlahnya. Kalau token mata uang negara itu belum ada, transaksi yang sama otomatis membuatnya. Setiap pembuat token mendapat creator fee (0–1%) dari setiap transaksi.
 - Pembeli cukup memakai ETH. Untuk token negara, `buyWithETH` dan `sellForETH` otomatis lewat dua curve (ETH ↔ $DZD ↔ $ALGERIA) dalam satu transaksi.
-- Supply setiap token 1 miliar. Sebanyak 80% dijual di bonding curve. Saat penuh, token lulus dan owner memindahkan dana serta 20% token cadangan ke pool DEX (`migrate`).
+- Supply setiap token 1 miliar. Sebanyak 80% dijual di bonding curve. Pair Uniswap V2 (misalnya UPIN/MYR) dibuat saat launch, dan tidak ada yang bisa mengisinya sebelum lulus. Saat curve penuh, dana terkumpul dan 200 juta token otomatis masuk ke pair itu dan LP-nya dibakar. Scanner dan bot lalu menampilkannya sebagai UPIN/MYR. Kalau langkah otomatis gagal, siapa pun bisa memanggil `migrateToDex`.
 - Biaya platform 1% per curve, ditambah creator fee.
 
 ## 1. Deploy kontrak (sekali, dari wallet kamu)
@@ -21,6 +21,7 @@ Klik sebuah negara, lalu luncurkan dan perdagangkan tokennya. Setiap negara dipa
 cd contracts
 npm install
 npx hardhat test                    # semua test harus lulus
+npm run test:fork                   # uji dengan WETH + Uniswap V2 asli Robinhood Chain (fork lokal, tidak mengirim apa pun)
 cp .env.example .env                # isi DEPLOYER_PRIVATE_KEY (wallet dengan sedikit ETH di Robinhood Chain)
 npm run deploy:mainnet
 ```
