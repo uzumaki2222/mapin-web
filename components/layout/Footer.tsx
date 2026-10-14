@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
-import { MAPIN_LAUNCHPAD, MAPIN_WETH } from "@/lib/contracts/mapin-abi";
+import { MAPIN_LAUNCHPAD } from "@/lib/contracts/mapin-abi";
 import { explorerAddress } from "@/lib/config/public";
 
 // Fill in later: X_URL = the mapin account on X.
@@ -37,7 +37,7 @@ export function Footer() {
         <div className="mp-foot-col">
           <span className="mp-k">Contracts</span>
           <AddrLine label="Factory" value={MAPIN_LAUNCHPAD} />
-          <AddrLine label="WETH" value={MAPIN_WETH} />
+          <div className="mp-foot-addr"><span className="mp-k">Pairs</span><span>Your token / its country&apos;s currency coin</span></div>
           <div className="mp-foot-addr"><span className="mp-k">Network</span><span>Robinhood Chain · 4663</span></div>
         </div>
       </div>

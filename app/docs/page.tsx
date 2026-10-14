@@ -47,7 +47,7 @@ export default function Page() {
         <h2>Addresses</h2>
         <dl className="mp-addrs">
           <Addr label="Factory (MapinLaunchpad)" value={MAPIN_LAUNCHPAD} />
-          <Addr label="WETH" value={MAPIN_WETH} />
+          <Addr label="WETH (internal: wraps the ETH buyers pay)" value={MAPIN_WETH} />
           <div className="mp-addrrow"><dt>Network</dt><dd>Robinhood Chain mainnet · chain id 4663 · gas in ETH</dd></div>
           <div className="mp-addrrow"><dt>Explorer</dt><dd><a href={EXPLORER_URL} target="_blank" rel="noreferrer">{EXPLORER_URL.replace("https://", "")}</a></dd></div>
         </dl>
