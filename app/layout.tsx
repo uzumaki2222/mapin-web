@@ -10,30 +10,30 @@ import { PUBLIC_APP_URL } from "@/lib/config/public";
 // icon.png, apple-icon.png, opengraph-image.png, twitter-image.png (all made from the official logo).
 export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_APP_URL),
-  title: { default: "mapin — tokenize any business on earth", template: "%s · mapin" },
-  description: "Find any shop, café or restaurant on the world map and tokenize it on Robinhood Chain. A share of every trade is held for the real owner.",
+  title: { default: "mapin — every country is a coin", template: "%s · mapin" },
+  description: "Click a country on the world map, launch its coin and trade it against its own currency coin on Robinhood Chain.",
   applicationName: "mapin",
   openGraph: {
     type: "website",
     siteName: "mapin",
-    title: "mapin — tokenize any business on earth",
-    description: "Find any shop, café or restaurant on the world map and tokenize it on Robinhood Chain.",
+    title: "mapin — every country is a coin",
+    description: "Click a country, launch its coin, trade it against its currency coin. Robinhood Chain.",
   },
-  twitter: { card: "summary_large_image", title: "mapin — tokenize any business on earth" },
+  twitter: { card: "summary_large_image", title: "mapin — every country is a coin" },
 };
 
-export const viewport: Viewport = { themeColor: "#efe2c4" };
+export const viewport: Viewport = { themeColor: "#0b0d10" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ colorScheme: "dark" }}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600&display=swap"
         />
       </head>
       <body>

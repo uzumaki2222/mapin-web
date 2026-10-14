@@ -14,11 +14,13 @@ export function Header() {
     <>
       <header className="header">
         <div className={`${onMap ? "header-wide" : "container"} header-inner`}>
-          <Link href="/" className="brand" aria-label="mapin — world map">
-            <Logo height={40} priority />
+          <Link href="/" className="brand" aria-label="mapin home">
+            <Logo height={38} priority />
+            <span className="brand-word">mapin</span>
           </Link>
           <nav className="header-nav" aria-label="Main">
-            <Link href="/" aria-current={onMap ? "page" : undefined}>Map</Link>
+            <Link href="/#map" aria-current={onMap ? "page" : undefined}>Map</Link>
+            <Link href="/#board">Board</Link>
           </nav>
           <div className="header-actions">
             <ConnectButton />

@@ -1,7 +1,6 @@
 import { createConfig } from "@privy-io/wagmi";
 import { browserTransport } from "@/lib/chain/transport";
 import { robinhoodChain } from "@/lib/chain/robinhood";
-import { PUBLIC_APP_URL } from "@/lib/config/public";
 
 /**
  * Privy App ID (dashboard.privy.io → App settings). The App ID is public by design; the env var
@@ -21,11 +20,12 @@ export const privyConfig = {
   // "wallet" = MetaMask, Rabby, OKX, Robinhood Wallet, WalletConnect…; "email" = login with email + auto-created wallet
   loginMethods: ["wallet", "email"] as ("wallet" | "email")[],
   appearance: {
-    theme: "light" as const,
+    theme: "dark" as const,
     accentColor: "#FFC400" as const,
-    logo: `${PUBLIC_APP_URL}/mapin-logo.png`,
+    // Served by this deployment itself, whatever NEXT_PUBLIC_APP_URL says.
+    logo: typeof window !== "undefined" ? `${window.location.origin}/mapin-logo.png` : "/mapin-logo.png",
     landingHeader: "Connect to mapin",
-    loginMessage: "Tokenize any business on earth",
+    loginMessage: "Every country is a coin",
     showWalletLoginFirst: true,
   },
   embeddedWallets: {

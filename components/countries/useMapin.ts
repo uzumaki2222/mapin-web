@@ -98,7 +98,7 @@ export function useMapinTx() {
       return await getWalletClient(config, { chainId: CHAIN_ID });
     } catch {
       const w = wallets.find((x) => address && x.address.toLowerCase() === address.toLowerCase()) ?? wallets[0];
-      if (!w) throw new Error("Wallet terputus. Hubungkan ulang wallet kamu.");
+      if (!w) throw new Error("Wallet disconnected. Reconnect your wallet and try again.");
       try { await w.switchChain(CHAIN_ID); } catch { /* already on chain */ }
       const provider = await w.getEthereumProvider();
       return createWalletClient({ account: w.address as Address, chain: robinhoodChain, transport: custom(provider) });
@@ -106,8 +106,8 @@ export function useMapinTx() {
   }
 
   /** Simulate, send, wait. Returns the receipt. */
-  async function send(to: Address, abi: Abi, functionName: string, args: readonly unknown[], value = 0n, label = "Transaksi") {
-    if (!address || !pc) throw new Error("Hubungkan wallet dulu.");
+  async function send(to: Address, abi: Abi, functionName: string, args: readonly unknown[], value = 0n, label = "Transaction") {
+    if (!address || !pc) throw new Error("Connect your wallet first.");
     try {
       await pc.simulateContract({ account: address, address: to, abi, functionName, args, value } as never);
     } catch (err) {
@@ -121,18 +121,18 @@ export function useMapinTx() {
       hash = await wc.sendTransaction({ account: address, to, data, value, gas: (gas * 13n) / 10n, chain: robinhoodChain } as never);
     } catch (err) {
       const d = decodeError(err, label);
-      throw new Error(d.kind === "rejected" ? `${label} dibatalkan di wallet.` : d.message);
+      throw new Error(d.kind === "rejected" ? `${label} was rejected in your wallet.` : d.message);
     }
     const receipt = await pc.waitForTransactionReceipt({ hash, timeout: 180_000 });
-    if (receipt.status !== "success") throw new Error(`${label} gagal di chain. Dana kamu tidak terpakai kecuali gas.`);
+    if (receipt.status !== "success") throw new Error(`${label} failed on-chain. Only gas was spent.`);
     return receipt;
   }
 
   async function ensureAllowance(token: Address, amount: bigint, symbol: string) {
-    if (!address || !pc) throw new Error("Hubungkan wallet dulu.");
+    if (!address || !pc) throw new Error("Connect your wallet first.");
     const cur = await pc.readContract({ address: token, abi: launchTokenAbi, functionName: "allowance", args: [address, MAPIN_LAUNCHPAD as Address] });
     if (cur >= amount) return;
-    await send(token, launchTokenAbi as Abi, "approve", [MAPIN_LAUNCHPAD, amount], 0n, `Izin ${symbol}`);
+    await send(token, launchTokenAbi as Abi, "approve", [MAPIN_LAUNCHPAD, amount], 0n, `Approve ${symbol}`);
   }
 
   function launchedToken(receipt: { logs: { data: Hex; topics: readonly Hex[] }[] }): Address | null {

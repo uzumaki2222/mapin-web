@@ -2,31 +2,34 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
-import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
-import { MAP_STYLE_URL, applyParchment } from "@/components/map/style";
+import type { Map as MlMap } from "maplibre-gl";
 
 export type CountryStatus = "none" | "currency" | "live" | "graduated";
 
 interface Props {
   status: Record<string, CountryStatus>; // place id -> status
-  selected: string | null;
-  onSelect(id: string | null): void;
-  onHover?(id: string | null): void;
+  onSelect(id: string): void;
+  onHover?(hit: { id: string; x: number; y: number } | null): void;
 }
 
 type GeoFeature = { type: "Feature"; id: string; properties: Record<string, unknown>; geometry: { type: string; coordinates: unknown } };
 type Geo = { type: "FeatureCollection"; features: GeoFeature[] };
 
-const COLORS = {
-  none: "rgba(43,29,16,0.04)",
-  currency: "rgba(255,196,0,0.28)",
+export const MAP_FILL = {
+  none: "#222930",
+  hover: "#36414b",
+  currency: "#7a5f0c",
   live: "#ffc400",
-  graduated: "#2f6b3f",
-  line: "#2b1d10",
+  graduated: "#3ad08a",
+  ocean: "#0d1115",
+  line: "#0d1115",
 };
 
-/** World map of countries. Fill colour shows whether the country / its currency has a token. */
-export function CountryMap({ status, selected, onSelect, onHover }: Props) {
+/**
+ * World map of countries on a blank MapLibre style (no tile server, no glyphs: nothing external to
+ * fail). Fill colour shows whether a country / its currency has a token. Click opens the country.
+ */
+export function CountryMap({ status, onSelect, onHover }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
   const geoRef = useRef<Geo | null>(null);
@@ -42,18 +45,25 @@ export function CountryMap({ status, selected, onSelect, onHover }: Props) {
       try {
         const lib = await import("maplibre-gl");
         const maplibregl = (lib as unknown as { default?: typeof lib }).default ?? lib;
-        const geo = (await (await fetch("/world.geo.json")).json()) as Geo;
+        const res = await fetch("/world.geo.json");
+        if (!res.ok) throw new Error(`world.geo.json ${res.status}`);
+        const geo = (await res.json()) as Geo;
         if (cancelled || !box.current) return;
         geo.features.forEach((f) => { f.properties = { ...f.properties, iso: f.id }; });
         geoRef.current = geo;
+        const narrow = box.current.clientWidth < 700;
         map = new maplibregl.Map({
           container: box.current,
-          style: MAP_STYLE_URL,
-          center: [15, 20],
-          zoom: 1.3,
-          minZoom: 0.8,
-          maxZoom: 8,
-          attributionControl: { compact: true },
+          style: {
+            version: 8,
+            sources: {},
+            layers: [{ id: "ocean", type: "background", paint: { "background-color": MAP_FILL.ocean } }],
+          },
+          center: [12, 22],
+          zoom: narrow ? 0.35 : 1.25,
+          minZoom: 0,
+          maxZoom: 7,
+          attributionControl: false,
           dragRotate: false,
           pitchWithRotate: false,
           renderWorldCopies: false,
@@ -61,9 +71,9 @@ export function CountryMap({ status, selected, onSelect, onHover }: Props) {
         mapRef.current = map;
         map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
         map.touchZoomRotate.disableRotation();
+        map.scrollZoom.disable(); // the page scrolls; zoom with buttons, pinch or double-click
         map.on("load", () => {
           if (!map) return;
-          applyParchment(map);
           map.addSource("countries", { type: "geojson", data: geo as never, promoteId: "iso" });
           map.addLayer({
             id: "country-fill",
@@ -71,53 +81,60 @@ export function CountryMap({ status, selected, onSelect, onHover }: Props) {
             source: "countries",
             paint: {
               "fill-color": [
-                "match", ["coalesce", ["feature-state", "status"], "none"],
-                "graduated", COLORS.graduated,
-                "live", COLORS.live,
-                "currency", COLORS.currency,
-                COLORS.none,
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                [
+                  "match", ["coalesce", ["feature-state", "status"], "none"],
+                  "graduated", "#6be3a9",
+                  "live", "#ffd84d",
+                  "currency", "#9a7a17",
+                  MAP_FILL.hover,
+                ],
+                [
+                  "match", ["coalesce", ["feature-state", "status"], "none"],
+                  "graduated", MAP_FILL.graduated,
+                  "live", MAP_FILL.live,
+                  "currency", MAP_FILL.currency,
+                  MAP_FILL.none,
+                ],
               ],
-              "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.95, 0.8],
             },
           });
           map.addLayer({
             id: "country-line",
             type: "line",
             source: "countries",
-            paint: {
-              "line-color": COLORS.line,
-              "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, 0.6],
-              "line-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 1, 0.45],
-            },
+            paint: { "line-color": MAP_FILL.line, "line-width": 0.7 },
           });
           let hovered: string | null = null;
-          map.on("mousemove", "country-fill", (e) => {
-            const id = e.features?.[0]?.properties?.iso as string | undefined;
-            if (!id || id === hovered) return;
-            if (hovered) map!.setFeatureState({ source: "countries", id: hovered }, { hover: false });
-            hovered = id;
-            map!.setFeatureState({ source: "countries", id }, { hover: true });
-            map!.getCanvas().style.cursor = "pointer";
-            cb.current.onHover?.(id);
-          });
-          map.on("mouseleave", "country-fill", () => {
+          const clear = () => {
             if (hovered) map!.setFeatureState({ source: "countries", id: hovered }, { hover: false });
             hovered = null;
+          };
+          map.on("mousemove", "country-fill", (e) => {
+            const id = e.features?.[0]?.properties?.iso as string | undefined;
+            if (!id) return;
+            if (id !== hovered) {
+              clear();
+              hovered = id;
+              map!.setFeatureState({ source: "countries", id }, { hover: true });
+            }
+            map!.getCanvas().style.cursor = "pointer";
+            cb.current.onHover?.({ id, x: e.point.x, y: e.point.y });
+          });
+          map.on("mouseleave", "country-fill", () => {
+            clear();
             map!.getCanvas().style.cursor = "";
             cb.current.onHover?.(null);
           });
-          map.on("click", (e) => {
-            const f = map!.queryRenderedFeatures(e.point, { layers: ["country-fill"] })[0];
-            cb.current.onSelect((f?.properties?.iso as string | undefined) ?? null);
+          map.on("click", "country-fill", (e) => {
+            const id = e.features?.[0]?.properties?.iso as string | undefined;
+            if (id) cb.current.onSelect(id);
           });
           setReady(true);
         });
-        map.on("error", (e) => {
-          const msg = (e as { error?: { message?: string } }).error?.message;
-          if (msg && /style|Failed to fetch/i.test(msg)) setFailed("Peta dasar gagal dimuat. Muat ulang halaman.");
-        });
       } catch {
-        setFailed("Peta gagal dimuat. Muat ulang halaman.");
+        if (!cancelled) setFailed("The map could not load. Refresh the page.");
       }
     })();
     return () => {
@@ -135,43 +152,11 @@ export function CountryMap({ status, selected, onSelect, onHover }: Props) {
     for (const f of geo.features) map.setFeatureState({ source: "countries", id: f.id }, { status: status[f.id] ?? "none" });
   }, [ready, status]);
 
-  // selection outline + fly
-  const prevSel = useRef<string | null>(null);
-  useEffect(() => {
-    const map = mapRef.current;
-    const geo = geoRef.current;
-    if (!ready || !map || !geo) return;
-    if (prevSel.current) map.setFeatureState({ source: "countries", id: prevSel.current }, { selected: false });
-    prevSel.current = selected;
-    if (!selected) return;
-    map.setFeatureState({ source: "countries", id: selected }, { selected: true });
-    const f = geo.features.find((x) => x.id === selected);
-    if (!f) return;
-    let w = 180, s = 90, e = -180, n = -90;
-    const walk = (c: unknown): void => {
-      if (Array.isArray(c) && typeof c[0] === "number") {
-        const [x, y] = c as [number, number];
-        if (x < w) w = x; if (x > e) e = x; if (y < s) s = y; if (y > n) n = y;
-      } else if (Array.isArray(c)) c.forEach(walk);
-    };
-    walk(f.geometry.coordinates);
-    const desktop = window.innerWidth > 760;
-    map.fitBounds([[w, s], [e, n]], {
-      padding: desktop ? { top: 60, bottom: 60, left: 60, right: 440 } : { top: 40, bottom: Math.round(window.innerHeight * 0.55), left: 30, right: 30 },
-      maxZoom: 5, duration: 900,
-    });
-  }, [ready, selected]);
-
-  // keep the source fresh if geometry is replaced later (not expected, defensive)
-  useEffect(() => {
-    const map = mapRef.current;
-    if (ready && map && geoRef.current) (map.getSource("countries") as GeoJSONSource | undefined)?.setData(geoRef.current as never);
-  }, [ready]);
-
   return (
-    <div className="cmap">
-      <div ref={box} className="cmap-canvas" aria-label="Peta dunia, klik negara" />
-      {failed ? <div className="cmap-failed">{failed}</div> : null}
+    <div className="mp-map">
+      <div ref={box} className="mp-map-canvas" aria-label="World map. Click a country to open it." />
+      {!ready && !failed ? <div className="mp-map-msg">Loading map…</div> : null}
+      {failed ? <div className="mp-map-msg">{failed}</div> : null}
     </div>
   );
 }
