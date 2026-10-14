@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEthUsd, useMapinState } from "@/components/countries/useMapin";
 import { Flag, PLACE, Stats, TradeBox, placeOf, timeAgo } from "@/components/countries/shared";
-import { explorerAddress } from "@/lib/config/public";
+import { explorerAddress, explorerToken } from "@/lib/config/public";
 import { Notice } from "@/components/ui/Notice";
 
 export function TokenPage({ address }: { address: string }) {
@@ -54,9 +54,26 @@ export function TokenPage({ address }: { address: string }) {
         <section className="mp-card">
           <div className="mp-card-head"><div><h2>Stats</h2><p>Live from the contract, refreshed every few seconds.</p></div></div>
           {place ? <Stats token={token} currency={isCountry ? currency : undefined} place={place} ethUsd={ethUsd} /> : null}
-          {isCountry && currency ? (
-            <Link className="mp-linkrow" href={`/t/${currency.address}`}>Quote coin: <b>${currency.symbol}</b> ({currency.name}) →</Link>
-          ) : null}
+          <div className="mp-verify">
+            <span className="mp-k">Verify the pair on-chain</span>
+            <div className="mp-verify-pair">
+              <b>{token.symbol}</b><em>/</em><b>{isCountry ? currency?.symbol ?? place?.currency : "ETH"}</b>
+            </div>
+            <p className="mp-fine">
+              {isCountry
+                ? `This token's contract stores its pair forever: quoteToken() returns the ${currency?.symbol ?? place?.currency} coin address below. It cannot be changed.`
+                : "Currency coins trade against ETH (held as WETH inside the launchpad)."}
+            </p>
+            <a className="mp-linkrow" href={`${explorerAddress(token.address)}?tab=read_contract`} target="_blank" rel="noreferrer">
+              ${token.symbol} contract · read quoteToken() <span className="mono">{token.address.slice(0, 8)}…{token.address.slice(-6)}</span> ↗
+            </a>
+            <a className="mp-linkrow" href={explorerToken(token.quote)} target="_blank" rel="noreferrer">
+              Quote: {isCountry ? `$${currency?.symbol ?? place?.currency} coin` : "WETH"} <span className="mono">{token.quote.slice(0, 8)}…{token.quote.slice(-6)}</span> ↗
+            </a>
+            {isCountry && currency ? (
+              <Link className="mp-linkrow" href={`/t/${currency.address}`}>Trade the quote coin: <b>${currency.symbol}</b> ({currency.name}) →</Link>
+            ) : null}
+          </div>
         </section>
       </div>
     </div>

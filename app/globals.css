@@ -696,3 +696,9 @@ h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.02em; }
   .mp-band { padding: 22px; }
   .mp-flow > i { transform: rotate(90deg); margin: 0 auto; }
 }
+.mp-verify { display: grid; gap: 10px; padding: 14px; border: 1.5px solid #5a4a12; border-radius: 14px; background: #15130b; }
+.mp-verify-pair { display: flex; align-items: baseline; gap: 8px; font: 800 26px var(--display); }
+.mp-verify-pair b { color: var(--yellow); }
+.mp-verify-pair em { font-style: normal; color: var(--grey-3); }
+.mp-verify .mp-linkrow { font-size: 13.5px; overflow-wrap: anywhere; }
+.mp-verify .mp-linkrow .mono { color: var(--grey-4); margin-left: 4px; }
