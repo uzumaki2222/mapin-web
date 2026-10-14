@@ -11,7 +11,7 @@ export function Footer() {
       <div className="mp-foot-row">
         <div className="mp-foot-brand">
           <Link href="/" className="brand" aria-label="mapin home"><Logo height={40} /><span className="brand-word">mapin</span></Link>
-          <p className="mp-foot-slogan">Every country is a coin.</p>
+          <p className="mp-foot-slogan">Plant your flag.</p>
         </div>
         <div className="mp-foot-contract">
           <span className="mp-k">Contract</span>

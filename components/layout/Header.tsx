@@ -61,7 +61,7 @@ export function Header() {
         <div className="mp-drawer-head">
           <Link href="/" className="brand" aria-label="mapin home">
             <Logo height={44} />
-            <span><span className="brand-word">mapin</span><small className="mp-drawer-slogan">Every country is a coin.</small></span>
+            <span><span className="brand-word">mapin</span><small className="mp-drawer-slogan">Plant your flag.</small></span>
           </Link>
           <button type="button" className="mp-close" aria-label="Close menu" onClick={() => setOpen(false)}>✕</button>
         </div>

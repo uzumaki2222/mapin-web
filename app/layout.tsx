@@ -10,16 +10,16 @@ import { PUBLIC_APP_URL } from "@/lib/config/public";
 // icon.png, apple-icon.png, opengraph-image.png, twitter-image.png (all made from the official logo).
 export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_APP_URL),
-  title: { default: "mapin — every country is a coin", template: "%s · mapin" },
+  title: { default: "mapin — plant your flag", template: "%s · mapin" },
   description: "Click a country on the world map, launch its coin and trade it against its own currency coin on Robinhood Chain.",
   applicationName: "mapin",
   openGraph: {
     type: "website",
     siteName: "mapin",
-    title: "mapin — every country is a coin",
+    title: "mapin — plant your flag",
     description: "Click a country, launch its coin, trade it against its currency coin. Robinhood Chain.",
   },
-  twitter: { card: "summary_large_image", title: "mapin — every country is a coin" },
+  twitter: { card: "summary_large_image", title: "mapin — plant your flag" },
 };
 
 export const viewport: Viewport = { themeColor: "#0b0d10" };
