@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { NetworkGuard } from "@/components/wallet/NetworkGuard";
-import { MAPIN_LAUNCHPAD } from "@/lib/contracts/mapin-abi";
-import { explorerAddress } from "@/lib/config/public";
+import { SocialLinks } from "@/components/ui/SocialLinks";
+import { SLOGAN } from "@/lib/config/social";
 
 const NAV = [
   { href: "/", label: "Map", hint: "Launch on any country", icon: "M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6zm6-3v15m6-12v15" },
@@ -61,13 +61,9 @@ export function Header() {
         <div className="mp-drawer-head">
           <Link href="/" className="brand" aria-label="mapin home">
             <Logo height={44} />
-            <span><span className="brand-word">mapin</span><small className="mp-drawer-slogan">Plant your flag.</small></span>
+            <span><span className="brand-word">mapin</span><small className="mp-drawer-slogan">{SLOGAN}</small></span>
           </Link>
           <button type="button" className="mp-close" aria-label="Close menu" onClick={() => setOpen(false)}>✕</button>
-        </div>
-        <div className="mp-drawer-wallet">
-          <span className="mp-k">Wallet</span>
-          <ConnectButton block />
         </div>
         <nav className="mp-drawer-nav" aria-label="Menu">
           {NAV.map((n) => (
@@ -78,11 +74,8 @@ export function Header() {
           ))}
         </nav>
         <div className="mp-drawer-foot">
-          <span className="mp-k">Factory</span>
-          {MAPIN_LAUNCHPAD ? (
-            <a className="mono" href={explorerAddress(MAPIN_LAUNCHPAD)} target="_blank" rel="noreferrer">{MAPIN_LAUNCHPAD.slice(0, 10)}…{MAPIN_LAUNCHPAD.slice(-6)}</a>
-          ) : <span className="muted">Deploying soon</span>}
-          <span className="mp-fine">Robinhood Chain · chain 4663</span>
+          <p><b>mapin</b> turns the world map into a launchpad. Pick a country, name your token, and it trades against that country&apos;s own currency coin. When the curve fills, it graduates to Uniswap with locked liquidity.</p>
+          <SocialLinks size={40} />
         </div>
       </aside>
       <NetworkGuard />

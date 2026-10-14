@@ -25,7 +25,7 @@ export const privyConfig = {
     // Served by this deployment itself, whatever NEXT_PUBLIC_APP_URL says.
     logo: typeof window !== "undefined" ? `${window.location.origin}/mapin-logo.png` : "/mapin-logo.png",
     landingHeader: "Connect to mapin",
-    loginMessage: "Plant your flag",
+    loginMessage: "World domination, now on-chain",
     showWalletLoginFirst: true,
   },
   embeddedWallets: {
