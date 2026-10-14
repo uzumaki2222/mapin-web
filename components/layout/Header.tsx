@@ -43,15 +43,15 @@ export function Header() {
     <>
       <header className="header">
         <div className="header-wide header-inner">
-          <button type="button" className="mp-burger" aria-label="Open menu" aria-expanded={open} aria-controls="mp-drawer" onClick={() => setOpen(true)}>
-            <span /><span /><span />
-          </button>
           <Link href="/" className="brand" aria-label="mapin home">
             <Logo height={36} priority />
             <span className="brand-word">mapin</span>
           </Link>
           <div className="header-actions">
             <ConnectButton />
+            <button type="button" className="mp-burger" aria-label="Open menu" aria-expanded={open} aria-controls="mp-drawer" onClick={() => setOpen(true)}>
+              <span /><span /><span />
+            </button>
           </div>
         </div>
       </header>

@@ -707,3 +707,6 @@ h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.02em; }
 .mp-foot-contract { display: grid; gap: 4px; text-align: right; font-size: 15px; }
 .mp-foot-contract a { color: var(--yellow); text-decoration: none; }
 @media (max-width: 560px) { .mp-foot-contract { text-align: left; } }
+/* menu opens from the right, next to the burger in the top-right corner */
+.mp-drawer { left: auto; right: 0; transform: translateX(102%); border-right: 0; border-left: var(--border); }
+.mp-drawer.open { transform: translateX(0); box-shadow: -24px 0 60px -20px #000; }
