@@ -702,3 +702,8 @@ h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.02em; }
 .mp-verify-pair em { font-style: normal; color: var(--grey-3); }
 .mp-verify .mp-linkrow { font-size: 13.5px; overflow-wrap: anywhere; }
 .mp-verify .mp-linkrow .mono { color: var(--grey-4); margin-left: 4px; }
+.mp-foot-row { max-width: 1240px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.mp-foot-row .mp-foot-slogan { margin: 6px 0 0; }
+.mp-foot-contract { display: grid; gap: 4px; text-align: right; font-size: 15px; }
+.mp-foot-contract a { color: var(--yellow); text-decoration: none; }
+@media (max-width: 560px) { .mp-foot-contract { text-align: left; } }

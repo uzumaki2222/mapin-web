@@ -50,9 +50,6 @@ export function Header() {
             <Logo height={36} priority />
             <span className="brand-word">mapin</span>
           </Link>
-          <nav className="header-nav" aria-label="Main">
-            {NAV.slice(1).map((n) => <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}>{n.label}</Link>)}
-          </nav>
           <div className="header-actions">
             <ConnectButton />
           </div>
