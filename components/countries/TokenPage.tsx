@@ -41,7 +41,6 @@ export function TokenPage({ address }: { address: string }) {
             <span className="mp-pill on">{token.name}</span>
             <span className="mp-slash">/</span>
             <span className="mp-pill on">{quoteSym}</span>
-            {isCountry ? <><span className="mp-slash">/</span><span className="mp-pill on">ETH</span></> : null}
           </div>
           <p className="mp-fine">Creator <a href={explorerAddress(token.creator)} target="_blank" rel="noreferrer" className="mono">{token.creator.slice(0, 6)}…{token.creator.slice(-4)}</a> · creator fee {(token.creatorFeeBps / 100).toFixed(2)}% + 1% platform</p>
         </div>

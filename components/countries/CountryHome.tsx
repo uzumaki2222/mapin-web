@@ -70,7 +70,7 @@ export function CountryHome() {
             {[["DZ", "ALGERIA", "DZD"], ["JP", "JAPAN", "JPY"], ["GB", "UK", "GBP"]].map(([id, t, c], i) => (
               <div key={id} className={`mp-coin mp-coin-${i}`}>
                 <Flag id={id!} size={64} />
-                <div><b>${t}</b><span>/ ${c} / ETH</span></div>
+                <div><b>${t}</b><span>/ ${c}</span></div>
               </div>
             ))}
           </div>

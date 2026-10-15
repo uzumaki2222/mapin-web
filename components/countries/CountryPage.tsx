@@ -70,7 +70,7 @@ export function CountryPage({ id }: { id: string }) {
           <div className="mp-card-head">
             <span className="mp-step">$</span>
             <div>
-              <h2>${currency?.symbol ?? place.currency} <small>/ ETH</small></h2>
+              <h2>${currency?.symbol ?? place.currency}</h2>
               <p>{titleCase(place.currencyName)} coin{siblings.length ? ` · shared by ${siblings.length + 1} countries` : ""}</p>
             </div>
             {currency ? <span className="mp-badge on">Live</span> : <span className="mp-badge">Not launched</span>}
