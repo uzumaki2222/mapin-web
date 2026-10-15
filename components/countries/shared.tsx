@@ -143,7 +143,7 @@ export function LaunchForm({ kind, place, currencyLive, onDone }: { kind: "curre
       {isCountry ? (
         <div className="mp-pairhint">
           <span className="mp-k">Pair</span>
-          <b>${cleanSym || "TICKER"}</b><em>/</em><b>${place.currency}</b><em>/</em><b>ETH</b>
+          <b>${cleanSym || "TICKER"}</b><em>/</em><b>${place.currency}</b>
           {!currencyLive ? <small>The ${place.currency} coin does not exist yet. This launch creates it too, and you become its creator.</small> : null}
         </div>
       ) : null}

@@ -42,8 +42,6 @@ export function CountryPage({ id }: { id: string }) {
             <span className="mp-pill">$YOUR&nbsp;TOKEN</span>
             <span className="mp-slash">/</span>
             <span className={`mp-pill ${currency ? "on" : ""}`}>${currency?.symbol ?? place.currency}</span>
-            <span className="mp-slash">/</span>
-            <span className="mp-pill on">ETH</span>
           </div>
           <p className="mp-fine">Every token launched on {place.name} is paired with the {place.currency} coin. {tokens.length ? `${tokens.length} live here.` : "None yet: be the first."}</p>
         </div>
